@@ -7,10 +7,32 @@ let ffmpegPath = null;
 let ffprobePath = null;
 try { ffmpegPath = require("ffmpeg-static"); } catch(_) {}
 try { ffprobePath = require("ffprobe-static").path; } catch(_) {}
+ffmpegPath = resolveToolPath("ffmpeg") || ffmpegPath;
+ffprobePath = resolveToolPath("ffprobe") || ffprobePath;
 
 app.name = "ENKRIT";
 let win;
 let activeWhisperProc = null;
+
+function resolveToolPath(tool) {
+  if(process.platform !== "win32") return null;
+  const arch = process.arch === "ia32" ? "ia32" : "x64";
+  const scoped = tool === "ffmpeg" ? "@ffmpeg-installer" : "@ffprobe-installer";
+  const exe = `${tool}.exe`;
+  const packageDir = path.join(scoped, `win32-${arch}`, exe);
+  const roots = [
+    path.join(process.resourcesPath || "", "app.asar.unpacked", "node_modules"),
+    path.join(__dirname, "..", "node_modules"),
+    path.join(process.cwd(), "node_modules"),
+  ];
+  for(const root of roots) {
+    const candidate = path.join(root, packageDir);
+    try {
+      if(fs.existsSync(candidate)) return candidate;
+    } catch(_) {}
+  }
+  return null;
+}
 
 function createWindow() {
   win = new BrowserWindow({
