@@ -33,6 +33,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return await ipcRenderer.invoke("prepare-playable", mediaPath);
   },
 
+  openMediaDialog: async () => {
+    return await ipcRenderer.invoke("open-media-dialog");
+  },
+
+  openFolderDialog: async () => {
+    return await ipcRenderer.invoke("open-folder-dialog");
+  },
+
 });
 
 // Library scanning

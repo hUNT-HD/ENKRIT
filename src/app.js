@@ -122,6 +122,31 @@ function openNativePicker(){
   window.AndroidBridge.pickMedia();
   return true;
 }
+async function openDesktopMediaDialog(){
+  if(!window.electronAPI?.openMediaDialog) return false;
+  const items = await window.electronAPI.openMediaDialog();
+  openDesktopMediaItems(items);
+  return true;
+}
+async function openDesktopFolderDialog(){
+  if(!window.electronAPI?.openFolderDialog) return false;
+  const items = await window.electronAPI.openFolderDialog();
+  openDesktopMediaItems(items);
+  return true;
+}
+function openDesktopMediaItems(items){
+  const media = Array.isArray(items) ? items.filter(item=>item && item.path) : [];
+  if(!media.length) return;
+  const wasEmpty = S.playlist.length===0;
+  media.forEach(src=>{
+    const item = makeMediaItemFromPath(src.path, src.name, src);
+    if(!isDuplicateMedia(item)) S.playlist.push(item);
+    addToRecent({ name:item.name, path:item.path, ext:item.ext, size:item.size || 0, kind:item.kind, durationMs:src.durationMs || 0 });
+  });
+  renderPlaylist();
+  renderLibGrid();
+  if(wasEmpty||S.currentIndex===-1) loadVideo(Math.max(0, S.playlist.length-media.length));
+}
 function openAndroidMediaItems(items){
   const media = items.filter(item=>item && item.path);
   if(!media.length) return;
@@ -292,10 +317,10 @@ function openFiles(files){
   if(wasEmpty||S.currentIndex===-1) loadVideo(0);
 }
 
-$("btnOpen").addEventListener("click",()=>{ if(!openNativePicker()) $("fileInput").click(); });
-$("btnOpenMain").addEventListener("click",()=>{ if(!openNativePicker()) $("fileInput").click(); });
-$("btnAddFolder").addEventListener("click",()=>{ if(!openNativePicker()) $("folderInput").click(); });
-$("btnOpenFolderMain").addEventListener("click",()=>{ if(!openNativePicker()) $("folderInput").click(); });
+$("btnOpen").addEventListener("click",async()=>{ if(!openNativePicker() && !(await openDesktopMediaDialog())) $("fileInput").click(); });
+$("btnOpenMain").addEventListener("click",async()=>{ if(!openNativePicker() && !(await openDesktopMediaDialog())) $("fileInput").click(); });
+$("btnAddFolder").addEventListener("click",async()=>{ if(!openNativePicker() && !(await openDesktopFolderDialog())) $("folderInput").click(); });
+$("btnOpenFolderMain").addEventListener("click",async()=>{ if(!openNativePicker() && !(await openDesktopFolderDialog())) $("folderInput").click(); });
 $("fileInput").addEventListener("change",e=>{ if(e.target.files.length) openFiles(e.target.files); $("fileInput").value=""; });
 $("folderInput").addEventListener("change",e=>{ if(e.target.files.length) openFiles(e.target.files); $("folderInput").value=""; });
 

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require("electron");
 const path  = require("path");
 const fs    = require("fs");
 const os    = require("os");
@@ -241,6 +241,18 @@ const MEDIA_EXTS = new Set([
 ]);
 const SKIP_SCAN_DIRS = new Set(["node_modules", ".git", "dist", "build", ".cache", ".next", "Library", "Applications", "System"]);
 
+function mediaItemFromPath(filePath) {
+  const name = path.basename(filePath);
+  const ext = path.extname(name).toLowerCase();
+  if(!MEDIA_EXTS.has(ext)) return null;
+  try {
+    const stat = fs.statSync(filePath);
+    return { name, path:filePath, size:stat.size, ext:ext.slice(1), mtime:stat.mtimeMs };
+  } catch(_) {
+    return null;
+  }
+}
+
 function scanDir(dir, depth=0) {
   const files = [];
   if(depth > 4) return files;
@@ -256,8 +268,8 @@ function scanDir(dir, depth=0) {
         const ext = path.extname(e.name).toLowerCase();
         if(MEDIA_EXTS.has(ext)) {
           try {
-            const stat = fs.statSync(full);
-            files.push({ name:e.name, path:full, size:stat.size, ext:ext.slice(1), mtime:stat.mtimeMs });
+            const item = mediaItemFromPath(full);
+            if(item) files.push(item);
           } catch(_) {}
         }
       }
@@ -267,14 +279,18 @@ function scanDir(dir, depth=0) {
 }
 
 ipcMain.handle("scan-library", async () => {
-  const home = os.homedir();
-  const dirs = [
-    path.join(home, "Movies"),
-    path.join(home, "Downloads"),
-    path.join(home, "Desktop"),
-    path.join(home, "Documents"),
-    path.join(home, "Music"),
-  ].filter(d => { try { return fs.statSync(d).isDirectory(); } catch(_){ return false; } });
+  const fallbackHome = os.homedir();
+  const candidateDirs = [
+    safeGetPath("videos"),
+    safeGetPath("downloads"),
+    safeGetPath("desktop"),
+    safeGetPath("documents"),
+    safeGetPath("music"),
+    path.join(fallbackHome, "Movies"),
+    path.join(fallbackHome, "Videos"),
+  ].filter(Boolean);
+  const dirs = [...new Set(candidateDirs)]
+    .filter(d => { try { return fs.statSync(d).isDirectory(); } catch(_){ return false; } });
 
   const all = [];
   for(const d of dirs) all.push(...scanDir(d));
@@ -282,4 +298,33 @@ ipcMain.handle("scan-library", async () => {
   // Sort by most recent
   all.sort((a,b) => b.mtime - a.mtime);
   return all.slice(0, 500); // keep the UI fast while still surfacing a real library
+});
+
+function safeGetPath(name) {
+  try { return app.getPath(name); }
+  catch(_) { return ""; }
+}
+
+ipcMain.handle("open-media-dialog", async () => {
+  const result = await dialog.showOpenDialog(win, {
+    title: "Open media",
+    properties: ["openFile", "multiSelections"],
+    filters: [
+      { name:"Media", extensions:[...MEDIA_EXTS].map(ext => ext.slice(1)) },
+      { name:"All Files", extensions:["*"] },
+    ],
+  });
+  if(result.canceled) return [];
+  return result.filePaths.map(mediaItemFromPath).filter(Boolean);
+});
+
+ipcMain.handle("open-folder-dialog", async () => {
+  const result = await dialog.showOpenDialog(win, {
+    title: "Open media folder",
+    properties: ["openDirectory"],
+  });
+  if(result.canceled || !result.filePaths[0]) return [];
+  const files = scanDir(result.filePaths[0], 0);
+  files.sort((a,b) => b.mtime - a.mtime);
+  return files.slice(0, 1000);
 });
