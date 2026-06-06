@@ -1,0 +1,66 @@
+plugins {
+    id "com.android.application"
+}
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace "com.enkrit.app"
+    compileSdk 36
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        applicationId "com.enkrit.app"
+        minSdk 23
+        targetSdk 36
+        versionCode 2
+        versionName "1.0.1"
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile rootProject.file(keystoreProperties["storeFile"])
+                storePassword keystoreProperties["storePassword"]
+                keyAlias keystoreProperties["keyAlias"]
+                keyPassword keystoreProperties["keyPassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}
+
+dependencies {
+    implementation "androidx.media3:media3-exoplayer:1.4.1"
+}
+
+tasks.register("syncWebAssets", Sync) {
+    from("../../src") {
+        include "index.html"
+        include "style.css"
+        include "app.js"
+        include "fonts/**"
+    }
+    into("$projectDir/src/main/assets/www")
+}
+
+preBuild.dependsOn("syncWebAssets")

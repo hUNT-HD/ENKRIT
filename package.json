@@ -1,0 +1,94 @@
+{
+  "name": "enkrit",
+  "version": "1.0.1",
+  "description": "Premium offline video player — ENKRIT",
+  "main": "electron/main.js",
+  "author": {
+    "name": "ENKRIT",
+    "url": "https://enkrit.netlify.app"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "android:build": "cd android && JAVA_HOME=\"${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}\" ./gradlew assembleDebug",
+    "android:install": "cd android && JAVA_HOME=\"${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}\" ./gradlew installDebug",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win zip --x64 --ia32",
+    "build:win:signed": "electron-builder --win nsis zip --x64 --ia32",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder --mac --win --linux"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.enkrit.app",
+    "productName": "ENKRIT",
+    "copyright": "Copyright © 2026 ENKRIT",
+    "files": [
+      "src/**/*",
+      "electron/**/*",
+      "assets/**/*",
+      "node_modules/ffmpeg-static/**/*",
+      "node_modules/ffprobe-static/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**/*",
+      "node_modules/ffprobe-static/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "darkModeSupport": true,
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "publisherName": "ENKRIT",
+      "legalTrademarks": "ENKRIT",
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}-Windows-${arch}-v${version}.${ext}",
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Video"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "uninstallDisplayName": "ENKRIT"
+    }
+  }
+}

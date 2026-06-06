@@ -1,0 +1,41 @@
+// ENKRIT — preload.js
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
+const { pathToFileURL } = require("url");
+
+contextBridge.exposeInMainWorld("electronAPI", {
+
+  // Run local Whisper Python script
+  runWhisper: async (videoPath) => {
+    return await ipcRenderer.invoke("run-whisper", videoPath);
+  },
+
+  // Listen for progress updates from whisper
+  onWhisperProgress: (callback) => {
+    ipcRenderer.on("whisper-progress", (event, data) => callback(data));
+  },
+
+  // Read a file from disk (for loading generated SRT)
+  readFile: async (filePath) => {
+    return await ipcRenderer.invoke("read-file", filePath);
+  },
+
+  getPathForFile: (file) => {
+    try { return webUtils.getPathForFile(file); }
+    catch(_) { return file && file.path ? file.path : ""; }
+  },
+
+  toFileUrl: (filePath) => {
+    try { return pathToFileURL(filePath).href; }
+    catch(_) { return ""; }
+  },
+
+  preparePlayable: async (mediaPath) => {
+    return await ipcRenderer.invoke("prepare-playable", mediaPath);
+  },
+
+});
+
+// Library scanning
+contextBridge.exposeInMainWorld("libraryAPI", {
+  scanLibrary: async () => await ipcRenderer.invoke("scan-library"),
+});

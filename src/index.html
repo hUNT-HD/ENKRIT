@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENKRIT</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-mode">
+
+<div id="splash">
+  <div class="splash-inner">
+    <div class="splash-logo">
+      <svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="34" fill="none" stroke="#1e6fff" stroke-width="2.5" opacity="0.3"/><circle cx="36" cy="36" r="26" fill="none" stroke="#1e6fff" stroke-width="2" opacity="0.6"/><polygon points="28,22 28,50 54,36" fill="#1e6fff"/></svg>
+    </div>
+    <div class="splash-title">EN<span>KRIT</span></div>
+    <div class="splash-sub">PREMIUM VIDEO EXPERIENCE</div>
+    <div class="splash-bar"><div class="splash-fill"></div></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <header id="topbar">
+    <div class="topbar-left">
+      <div class="nav-logo">E<span class="logo-dot">●</span>K</div>
+      <button class="tbtn back-btn" id="btnBack" title="Back to Library" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="topbar-title" id="topbarTitle">ENKRIT</div>
+    </div>
+    <div class="topbar-right">
+      <button class="tbtn" id="btnAddFolder" title="Open Folder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></button>
+      <button class="tbtn" id="btnOpen" title="Open File"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+
+      <div class="theme-wrap" id="themeWrap">
+        <button class="tbtn" id="btnTheme" title="Theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9c0-1.5-.37-2.91-1.03-4.15A2.5 2.5 0 0 1 16.5 4.38 8.9 8.9 0 0 0 12 3z"/><circle cx="8" cy="10" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16" cy="10" r="1"/><circle cx="11" cy="15" r="1"/></svg>
+          <span class="theme-current" id="themeCurrent"></span>
+        </button>
+        <div class="theme-menu" id="themeMenu">
+          <div class="theme-mode">
+            <button class="theme-mode-btn" id="themeDark">Dark</button>
+            <button class="theme-mode-btn" id="themeLight">Light</button>
+          </div>
+          <div class="theme-grid">
+            <button class="theme-choice active" data-accent="prism" style="--dot:#24f0c1;--dot2:#8b5cf6;--dot3:#ffd166"><span class="theme-swatch"></span><span class="theme-label">Prism Noir</span></button>
+            <button class="theme-choice" data-accent="aurora" style="--dot:#7dd3fc;--dot2:#34d399;--dot3:#f0f9ff"><span class="theme-swatch"></span><span class="theme-label">Aurora Ice</span></button>
+            <button class="theme-choice" data-accent="solar" style="--dot:#f97316;--dot2:#facc15;--dot3:#14b8a6"><span class="theme-swatch"></span><span class="theme-label">Solar Alloy</span></button>
+            <button class="theme-choice" data-accent="velvet" style="--dot:#fb7185;--dot2:#22d3ee;--dot3:#fef3c7"><span class="theme-swatch"></span><span class="theme-label">Velvet Pulse</span></button>
+            <button class="theme-choice" data-accent="nebula" style="--dot:#a3e635;--dot2:#06b6d4;--dot3:#f472b6"><span class="theme-swatch"></span><span class="theme-label">Nebula Lime</span></button>
+            <button class="theme-choice" data-accent="mono" style="--dot:#e5e7eb;--dot2:#38bdf8;--dot3:#111827"><span class="theme-swatch"></span><span class="theme-label">Chrome Mono</span></button>
+          </div>
+        </div>
+      </div>
+      <button class="tbtn" id="btnSidebar" title="Playlist"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg></button>
+    </div>
+  </header>
+
+  <div id="mainWrap" style="flex:1;display:flex;flex-direction:row;overflow:hidden;">
+    <div id="playerWrap" style="flex:1;min-width:0;position:relative;overflow:hidden;background:#000;">
+
+      <div id="dropZone">
+        <!-- LIBRARY VIEW -->
+        <div class="library-wrap">
+          <!-- TOP BAR -->
+          <div class="lib-topbar">
+            <div class="lib-logo">
+              <svg width="28" height="28" viewBox="0 0 64 64" fill="none"><polygon points="24,18 24,46 50,32" fill="#1e6fff"/></svg>
+              <span class="lib-title">ENKRIT</span>
+            </div>
+            <div class="lib-actions">
+              <div class="lib-search-wrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="libSearch" placeholder="Search files..." class="lib-search">
+              </div>
+              <button class="lib-btn" id="btnOpenMain">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Open Files
+              </button>
+              <button class="lib-btn" id="btnOpenFolderMain">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                Add Folder
+              </button>
+              <button class="lib-btn lib-scan-btn" id="btnScanLib">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Scan Library
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION TABS -->
+          <div class="lib-tabs">
+            <button class="lib-tab active" data-tab="recent">Recently Played</button>
+            <button class="lib-tab" data-tab="library">My Library</button>
+            <button class="lib-tab" data-tab="favorites">Favorites</button>
+          </div>
+          <div class="lib-tools" id="libTools">
+            <div class="kind-filter" id="kindFilter">
+              <button class="kind-chip active" data-kind="all">All</button>
+              <button class="kind-chip" data-kind="video">Video</button>
+              <button class="kind-chip" data-kind="audio">Audio</button>
+            </div>
+            <select class="lib-sort" id="libSort" title="Sort Library">
+              <option value="recent">Newest</option>
+              <option value="name">Name</option>
+              <option value="size">Size</option>
+              <option value="long">Duration</option>
+            </select>
+          </div>
+          <div class="recent-tools" id="recentTools" style="display:none">
+            <button class="recent-clear-btn" data-clear-recent="today">Clear Today</button>
+            <button class="recent-clear-btn" data-clear-recent="yesterday">Yesterday</button>
+            <button class="recent-clear-btn" data-clear-recent="older">Older 7d</button>
+            <button class="recent-clear-btn danger" data-clear-recent="all">Clear All</button>
+          </div>
+
+          <!-- SCANNING STATE -->
+          <div class="lib-scanning" id="libScanning" style="display:none">
+            <div class="lib-scan-spinner"></div>
+            <span id="libScanStatus">Scanning your folders...</span>
+          </div>
+
+          <!-- EMPTY STATE -->
+          <div class="lib-empty" id="libEmpty">
+            <svg width="56" height="56" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="30" fill="rgba(30,111,255,0.06)" stroke="rgba(30,111,255,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/><polygon points="24,18 24,46 50,32" fill="#1e6fff" opacity="0.4"/></svg>
+            <div class="lib-empty-title">No media yet</div>
+            <div class="lib-empty-sub">Drop files here, open files, or scan your library</div>
+            <button class="lib-empty-action" id="libEmptyAction" style="display:none">Allow media access</button>
+          </div>
+
+          <!-- VIDEO GRID -->
+          <div class="lib-grid" id="libGrid"></div>
+        </div>
+      </div>
+
+      <div id="videoContainer" style="display:none">
+        <video id="videoEl" preload="auto"></video>
+        <div id="subtitleDisplay" class="subtitle-off"></div>
+        <div id="seekFeedback" class="seek-feedback"></div>
+        <div id="gestureHud" class="gesture-hud" aria-hidden="true">
+          <div class="gesture-icon" id="gestureIcon"></div>
+          <div class="gesture-title" id="gestureTitle"></div>
+          <div class="gesture-value" id="gestureValue"></div>
+          <div class="gesture-meter"><span id="gestureMeter"></span></div>
+        </div>
+        <div id="seekPreview" class="seek-preview" aria-hidden="true">
+          <span id="seekPreviewDir"></span>
+          <strong id="seekPreviewTime">0:00</strong>
+        </div>
+        <div class="tap-zone tap-zone-left" id="tapLeft">-5s</div>
+        <div class="tap-zone tap-zone-right" id="tapRight">+5s</div>
+        <button class="screen-lock-btn" id="screenLockBtn" title="Lock Screen">
+          <svg class="screen-lock-open" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.7-1.6"/></svg>
+          <svg class="screen-lock-closed" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </button>
+
+        <!-- FLOATING DRAGGABLE CONTROLS -->
+        <div id="controls" class="controls-float">
+          <div class="ctrl-drag-handle" id="ctrlDragHandle">
+            <span class="drag-icon" id="dragIcon">⠿</span>
+            <span class="ctrl-fname" id="ctrlFilename"></span>
+            <div class="ctrl-handle-right">
+              <span class="drag-hint" id="dragHint">drag to move</span>
+              <button class="lock-btn" id="btnLock" title="Lock/Unlock position">
+                <!-- UNLOCKED icon (default) -->
+                <svg id="iconUnlocked" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+                </svg>
+                <!-- LOCKED icon -->
+                <svg id="iconLocked" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="display:none">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="progress-area">
+            <div class="time-display">
+              <span id="timeNow">0:00</span>
+              <span id="timeDur">0:00</span>
+            </div>
+            <div class="progress-bar-wrap" id="progressWrap">
+              <div class="progress-bg"></div>
+              <div class="progress-buffered" id="progressBuf"></div>
+              <div class="progress-fill" id="progressFill"></div>
+              <div class="progress-thumb" id="progressThumb"></div>
+            </div>
+          </div>
+          <div class="controls-row">
+            <div class="ctrl-left">
+              <button class="ctrl-btn" id="btnPrev" title="Previous (B)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+              <button class="ctrl-btn seek-btn" id="btnBack5" title="Back 5s"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span class="seek-label">5</span></button>
+              <button class="ctrl-btn play-btn" id="btnPlay">
+                <svg id="iconPlay" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                <svg id="iconPause" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              </button>
+              <button class="ctrl-btn seek-btn" id="btnFwd5" title="Forward 5s"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M16 3h5v5"/></svg><span class="seek-label">5</span></button>
+              <button class="ctrl-btn" id="btnNext" title="Next (N)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+              <div class="volume-wrap">
+                <button class="ctrl-btn" id="btnMute">
+                  <svg id="iconVol" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                  <svg id="iconMute" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0a7 7 0 0 1-.83 3.32l1.43 1.43A8.9 8.9 0 0 0 21 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a9 9 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>
+                </button>
+                <input type="range" id="volumeSlider" min="0" max="500" value="100" step="1" class="vol-slider">
+                <span class="vol-pct" id="volPct">100%</span>
+                <div class="decoder-wrap">
+                  <button class="decoder-btn" id="decoderBtn"><span id="decoderLabel">HW</span></button>
+                  <div class="decoder-panel" id="decoderPanel">
+                    <div class="dp-title">Audio Decoder Mode</div>
+                    <button class="dp-opt active" id="decoderHW">
+                      <span class="dp-name">HW Decoder</span>
+                      <span class="dp-desc">Native · 0–100% volume</span>
+                    </button>
+                    <button class="dp-opt" id="decoderSW">
+                      <span class="dp-name">SW Decoder</span>
+                      <span class="dp-desc">Web Audio API · up to 500%</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="ctrl-right">
+              <div class="speed-wrap">
+                <button class="ctrl-btn speed-btn" id="btnSpeed"><span id="speedLabel">1×</span></button>
+                <div class="speed-panel" id="speedPanel">
+                  <div class="speed-title">Playback Speed</div>
+                  <input type="range" id="speedSlider" min="0.1" max="5" step="0.05" value="1" class="speed-range">
+                  <div class="speed-readout" id="speedReadout">1.00×</div>
+                  <div class="speed-presets">
+                    <button class="spbtn" data-s="0.1">0.1×</button>
+                    <button class="spbtn" data-s="0.25">0.25×</button>
+                    <button class="spbtn" data-s="0.5">0.5×</button>
+                    <button class="spbtn" data-s="0.75">0.75×</button>
+                    <button class="spbtn active" data-s="1">1×</button>
+                    <button class="spbtn" data-s="1.25">1.25×</button>
+                    <button class="spbtn" data-s="1.5">1.5×</button>
+                    <button class="spbtn" data-s="2">2×</button>
+                    <button class="spbtn" data-s="3">3×</button>
+                    <button class="spbtn" data-s="5">5×</button>
+                  </div>
+                </div>
+              </div>
+              <button class="ctrl-btn" id="btnShuffle" title="Shuffle">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+              </button>
+              <button class="ctrl-btn" id="btnRepeat" title="Repeat">
+                <svg id="iconRepeat" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m17 1 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 23-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                <span class="repeat-one" id="repeatOne">1</span>
+              </button>
+              <button class="ctrl-btn" id="btnSleep" title="Sleep Timer">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
+              </button>
+              <div class="sub-wrap">
+                <button class="ctrl-btn sub-btn" id="btnSub" title="Subtitles">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M7 15h4M13 15h4M7 11h2M11 11h6"/></svg>
+                  <span class="sub-dot" id="subDot"></span>
+                </button>
+                <div class="sub-menu" id="subMenu">
+                  <div class="sub-title">Subtitles</div>
+                  <button class="sub-opt active" id="subOff" title="Subtitles Off"><span class="sub-opt-icon">✕</span><span>Off</span></button>
+                  <button class="sub-opt" id="subAuto" title="Generate AI Subtitles"><span class="sub-opt-icon">AI</span><span>AI</span></button>
+                  <button class="sub-opt" id="subFile" title="Load SRT File"><span class="sub-opt-icon">SRT</span><span>SRT</span></button>
+                  <div class="sub-info">Offline</div>
+                </div>
+              </div>
+              <button class="ctrl-btn" id="btnFilter" title="Video Filters"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></button>
+              <div class="resize-wrap">
+                <button class="ctrl-btn" id="btnResize" title="Video Size">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="M9 21H3v-6"/><path d="m3 21 7-7"/></svg>
+                </button>
+                <div class="resize-panel" id="resizePanel">
+                  <button class="resize-opt" data-zoom="0.75">75%</button>
+                  <button class="resize-opt active" data-zoom="1">Fit</button>
+                  <button class="resize-opt" data-zoom="1.25">125%</button>
+                  <button class="resize-opt" data-zoom="1.5">150%</button>
+                  <button class="resize-opt" data-zoom="2">200%</button>
+                  <button class="resize-opt" data-zoom="3">300%</button>
+                </div>
+              </div>
+              <button class="ctrl-btn" id="btnPip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="13" y="11" width="8" height="6" rx="1" fill="currentColor" stroke="none" opacity="0.7"/></svg></button>
+              <div class="orient-wrap">
+                <button class="ctrl-btn" id="btnOrient" title="Orientation">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M12 18h.01M4 8 2 6l2-2M20 16l2 2-2 2M2 6h4M18 18h4"/></svg>
+                </button>
+                <div class="orient-panel" id="orientPanel">
+                  <button class="orient-opt" data-orient="auto">Auto</button>
+                  <button class="orient-opt active" data-orient="portrait">Portrait</button>
+                  <button class="orient-opt" data-orient="landscape">Landscape</button>
+                </div>
+              </div>
+              <button class="ctrl-btn" id="btnFull">
+                <svg id="iconFull" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <svg id="iconExit" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div id="sidebar" style="width:280px;flex-shrink:0;display:flex;flex-direction:column;transition:width 0.3s ease;overflow:hidden;">
+      <div class="sb-header">
+        <span class="sb-title">Playlist</span>
+        <div class="sb-hright">
+          <span class="sb-count" id="sbCount">0 videos</span>
+          <button class="sb-clear" id="btnClearPlaylist" title="Clear Playlist">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+          </button>
+          <button class="sb-x" id="btnSidebarClose">✕</button>
+        </div>
+      </div>
+      <div class="sb-playlist" id="playlist">
+        <div class="sb-empty" id="sbEmpty">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          <p>No media yet</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER PANEL -->
+  <div id="filterPanel" class="panel-overlay" style="display:none">
+    <div class="panel-box panel-wide">
+      <div class="panel-header">
+        <span>Video Filters</span>
+        <button class="panel-close" id="filterClose">✕</button>
+      </div>
+
+      <!-- PRESET TABS -->
+      <div class="preset-tabs">
+        <button class="ptab active" data-preset="normal">Normal</button>
+        <button class="ptab" data-preset="clean_hd">Clean HD</button>
+        <button class="ptab" data-preset="ultra_clear">Ultra Clear</button>
+        <button class="ptab" data-preset="crisp_4k">Crisp 4K</button>
+        <button class="ptab" data-preset="hdr">HDR</button>
+        <button class="ptab" data-preset="hdr_plus">HDR+</button>
+        <button class="ptab" data-preset="low_light">Low Light</button>
+        <button class="ptab" data-preset="vivid">Vivid</button>
+        <button class="ptab" data-preset="sports">Sports</button>
+        <button class="ptab" data-preset="anime">Anime</button>
+        <button class="ptab" data-preset="cinematic">Cinematic</button>
+        <button class="ptab" data-preset="dolby">Dolby Vision</button>
+        <button class="ptab" data-preset="amoled">AMOLED</button>
+        <button class="ptab" data-preset="natural">Natural</button>
+        <button class="ptab" data-preset="soft_clean">Soft Clean</button>
+        <button class="ptab" data-preset="cool">Cool</button>
+        <button class="ptab" data-preset="warm">Warm</button>
+        <button class="ptab" data-preset="grayscale">Grayscale</button>
+        <button class="ptab" data-preset="black_white">B&amp;W</button>
+        <button class="ptab" data-preset="noir">Noir</button>
+        <button class="ptab" data-preset="vintage">Vintage</button>
+        <button class="ptab" data-preset="enhance">Auto Enhance</button>
+      </div>
+
+      <!-- TWO COLUMN SLIDERS -->
+      <div class="filter-cols">
+        <div class="filter-col">
+          <div class="fcol-title">Basic</div>
+          <div class="filter-row"><label>Brightness</label><input type="range" id="fBrightness" min="0" max="200" value="100"><span class="fval" id="fBrightnessVal">100%</span></div>
+          <div class="filter-row"><label>Contrast</label><input type="range" id="fContrast" min="0" max="300" value="100"><span class="fval" id="fContrastVal">100%</span></div>
+          <div class="filter-row"><label>Saturation</label><input type="range" id="fSaturation" min="0" max="300" value="100"><span class="fval" id="fSaturationVal">100%</span></div>
+          <div class="filter-row"><label>Exposure</label><input type="range" id="fExposure" min="-100" max="100" value="0"><span class="fval" id="fExposureVal">0</span></div>
+          <div class="filter-row"><label>Gamma</label><input type="range" id="fGamma" min="50" max="200" value="100"><span class="fval" id="fGammaVal">1.0</span></div>
+        </div>
+        <div class="filter-col">
+          <div class="fcol-title">Advanced</div>
+          <div class="filter-row"><label>Sharpness</label><input type="range" id="fSharpness" min="0" max="10" value="0" step="0.1"><span class="fval" id="fSharpnessVal">0</span></div>
+          <div class="filter-row"><label>Hue</label><input type="range" id="fHue" min="0" max="360" value="0"><span class="fval" id="fHueVal">0°</span></div>
+          <div class="filter-row"><label>Blur</label><input type="range" id="fBlur" min="0" max="10" value="0" step="0.1"><span class="fval" id="fBlurVal">0px</span></div>
+          <div class="filter-row"><label>Sepia</label><input type="range" id="fSepia" min="0" max="100" value="0"><span class="fval" id="fSepiaVal">0%</span></div>
+          <div class="filter-row"><label>Gray</label><input type="range" id="fGrayscale" min="0" max="100" value="0"><span class="fval" id="fGrayscaleVal">0%</span></div>
+          <div class="filter-row"><label>Invert</label><input type="range" id="fInvert" min="0" max="100" value="0"><span class="fval" id="fInvertVal">0%</span></div>
+        </div>
+      </div>
+
+      <button class="reset-btn" id="filterReset">↺ Reset All to Default</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="video/*,audio/*,.mkv,.avi,.flv,.wmv,.ts,.m2ts,.3gp,.ogv,.webm,.mp4,.mov,.m4v,.mp3,.wav,.aac,.m4a,.flac,.ogg,.oga,.opus,.wma,.aiff,.aif,.alac" multiple style="display:none">
+<input type="file" id="folderInput" webkitdirectory multiple style="display:none">
+<input type="file" id="srtInput" accept=".srt,.vtt,.ass" style="display:none">
+<script src="app.js"></script>
+</body>
+</html>

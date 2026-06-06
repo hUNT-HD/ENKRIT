@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ENKRIT — Video Player for Android, Mac and Windows</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --bg3: #181818;
+      --accent: #6C63FF;
+      --accent2: #4ECDC4;
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.1);
+      --text: #f0f0f0;
+      --text2: #888;
+      --text3: #444;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 48px;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,10,0.9);
+      backdrop-filter: blur(16px);
+    }
+
+    .logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 18px; font-weight: 700;
+      color: var(--text); letter-spacing: 4px;
+    }
+    .logo span { color: var(--accent); }
+
+    .nav-right { display: flex; align-items: center; gap: 32px; }
+    .nav-right a {
+      font-size: 13px; color: var(--text2);
+      text-decoration: none; font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-right a:hover { color: var(--text); }
+
+    .version-chip {
+      font-size: 11px; font-family: 'Space Mono', monospace;
+      background: rgba(108,99,255,0.12);
+      border: 1px solid rgba(108,99,255,0.25);
+      color: #a09bf5; padding: 5px 12px; border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 88vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 80px 24px 60px;
+      position: relative; overflow: hidden;
+    }
+
+    .hero-bg-circle {
+      position: absolute;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%, -60%);
+      pointer-events: none;
+      animation: breathe 5s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: translate(-50%, -60%) scale(1); opacity: 0.7; }
+      50% { transform: translate(-50%, -60%) scale(1.15); opacity: 1; }
+    }
+
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(78,205,196,0.08);
+      border: 1px solid rgba(78,205,196,0.2);
+      color: var(--accent2); font-size: 12px; font-weight: 500;
+      padding: 7px 18px; border-radius: 100px;
+      margin-bottom: 32px; letter-spacing: 0.5px;
+      animation: fadeUp 0.6s 0.1s both;
+    }
+
+    .hero-tag::before {
+      content: '';
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent2);
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .hero-title {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(56px, 12vw, 110px);
+      font-weight: 700; letter-spacing: 16px;
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s 0.2s both;
+      position: relative;
+    }
+
+    .hero-title::after {
+      content: 'ENKRIT';
+      position: absolute; inset: 0;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(108,99,255,0.3);
+      transform: translate(3px, 3px);
+      z-index: -1;
+    }
+
+    .hero-sub {
+      font-size: 18px; font-weight: 300;
+      color: var(--text2); max-width: 420px;
+      margin-bottom: 48px; line-height: 1.6;
+      animation: fadeUp 0.6s 0.3s both;
+    }
+
+    .hero-sub em { color: var(--text); font-style: normal; font-weight: 500; }
+
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: var(--accent);
+      color: #fff; font-size: 16px; font-weight: 600;
+      padding: 18px 40px; border-radius: 8px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeUp 0.6s 0.4s both;
+      letter-spacing: 0.3px;
+    }
+    .dl-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(108,99,255,0.4);
+    }
+    .dl-btn:active { transform: translateY(0); }
+
+    .dl-icon {
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .hero-meta {
+      margin-top: 20px; font-size: 12px; color: var(--text3);
+      font-family: 'Space Mono', monospace; letter-spacing: 1px;
+      animation: fadeUp 0.6s 0.5s both;
+    }
+
+    .trust-note {
+      margin-top: 14px;
+      max-width: 520px;
+      color: var(--text2);
+      font-size: 12px;
+      line-height: 1.6;
+      animation: fadeUp 0.6s 0.55s both;
+    }
+
+    .checksum {
+      display: inline-block;
+      margin-top: 8px;
+      font-family: 'Space Mono', monospace;
+      color: var(--text3);
+      font-size: 10px;
+      word-break: break-all;
+    }
+
+    .mini-link {
+      color: var(--accent2);
+      text-decoration: none;
+    }
+
+    .downloads {
+      padding: 80px 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+      border-top: 1px solid var(--border);
+    }
+
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .download-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 210px;
+    }
+
+    .download-card.disabled {
+      opacity: 0.58;
+    }
+
+    .platform-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .platform-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .platform-desc {
+      color: var(--text2);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .platform-chip {
+      font-family: 'Space Mono', monospace;
+      color: var(--accent2);
+      border: 1px solid rgba(78,205,196,0.25);
+      background: rgba(78,205,196,0.08);
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 10px;
+      white-space: nowrap;
+      letter-spacing: 1px;
+    }
+
+    .platform-meta {
+      color: var(--text3);
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      line-height: 1.7;
+      word-break: break-all;
+    }
+
+    .platform-actions {
+      margin-top: auto;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .small-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 11px 16px;
+      border-radius: 7px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .small-btn.secondary {
+      background: transparent;
+      color: var(--text2);
+      border: 1px solid var(--border2);
+    }
+
+    .small-btn.disabled {
+      pointer-events: none;
+      background: var(--bg3);
+      color: var(--text3);
+      border: 1px solid var(--border);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-item {
+      padding: 28px 20px; text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+
+    .stat-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 30px; font-weight: 700;
+      color: var(--text); margin-bottom: 6px;
+    }
+    .stat-val.c1 { color: var(--accent); }
+    .stat-val.c2 { color: var(--accent2); }
+
+    .stat-desc { font-size: 11px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 80px 48px;
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    .section-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; color: var(--text3);
+      letter-spacing: 4px; text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .feat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      transition: border-color 0.25s, background 0.25s;
+      display: flex; gap: 20px; align-items: flex-start;
+    }
+    .feat-card:hover {
+      border-color: var(--border2);
+      background: var(--bg3);
+    }
+
+    .feat-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; color: var(--accent);
+      background: rgba(108,99,255,0.1);
+      border: 1px solid rgba(108,99,255,0.2);
+      padding: 4px 10px; border-radius: 4px;
+      flex-shrink: 0; margin-top: 2px;
+      letter-spacing: 1px;
+    }
+
+    .feat-content {}
+    .feat-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .feat-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+    /* ── INSTALL ── */
+    .install {
+      padding: 80px 48px;
+      border-top: 1px solid var(--border);
+      max-width: 700px; margin: 0 auto;
+    }
+
+    .step-card {
+      display: flex; align-items: center; gap: 20px;
+      padding: 20px 24px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      background: var(--bg2);
+      transition: border-color 0.2s;
+    }
+    .step-card:hover { border-color: rgba(108,99,255,0.3); }
+
+    .step-n {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      width: 36px; height: 36px; border-radius: 6px;
+      background: rgba(108,99,255,0.1);
+      border: 1px solid rgba(108,99,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-text strong { display: block; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .step-text span { font-size: 12px; color: var(--text3); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px; color: var(--text3);
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 1px;
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 640px) {
+      nav { padding: 16px 20px; }
+      .nav-right a { display: none; }
+      .hero { padding: 60px 20px 40px; min-height: auto; }
+      .hero-title { font-size: 52px; letter-spacing: 8px; }
+      .stats-bar { grid-template-columns: repeat(3, 1fr); }
+      .stat-item { padding: 20px 10px; }
+      .stat-val { font-size: 22px; }
+      .features { padding: 48px 20px; }
+      .feat-grid { grid-template-columns: 1fr; }
+      .downloads { padding: 48px 20px; }
+      .download-grid { grid-template-columns: 1fr; }
+      .install { padding: 48px 20px; }
+      footer { flex-direction: column; gap: 8px; text-align: center; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">EN<span>K</span>RIT</div>
+  <div class="nav-right">
+    <a href="#features">Features</a>
+    <a href="#downloads">Downloads</a>
+    <a href="#install">Install</a>
+    <span class="version-chip">v1.0.1</span>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg-circle"></div>
+
+  <div class="hero-tag">Now available for Android, Mac and Windows</div>
+
+  <h1 class="hero-title">ENKRIT</h1>
+
+  <p class="hero-sub">
+    A <em>powerful</em> video player built for Android, macOS and Windows.
+    Clean, fast, and completely <em>ad-free</em>.
+  </p>
+
+  <a class="dl-btn" href="#downloads">
+    <span class="dl-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    </span>
+    Download ENKRIT
+  </a>
+
+  <p class="hero-meta">VERSION 1.0.1 &nbsp;·&nbsp; FREE &nbsp;·&nbsp; ANDROID / MAC / WINDOWS</p>
+  <p class="trust-note">
+    Official ENKRIT builds. Android may show an install warning for direct APK installs; Play Store and Apple notarization are the next trust steps.
+    <span class="checksum">Android SHA-256: 849929f1b0825c29d6866416651acd15fb2123881f4d51873fac30beca4ee05e</span>
+  </p>
+</section>
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-val c1">4K</div>
+    <div class="stat-desc">Max Resolution</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val">10+</div>
+    <div class="stat-desc">File Formats</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val c2">0</div>
+    <div class="stat-desc">Ads</div>
+  </div>
+</div>
+
+<section id="downloads" class="downloads">
+  <p class="section-title">// Downloads</p>
+  <div class="download-grid">
+    <div class="download-card">
+      <div class="platform-row">
+        <div>
+          <div class="platform-name">Android APK</div>
+          <div class="platform-desc">Release-signed APK for phones and tablets. Direct install from browser.</div>
+        </div>
+        <span class="platform-chip">3.4 MB</span>
+      </div>
+      <div class="platform-meta">SHA-256: 849929f1b0825c29d6866416651acd15fb2123881f4d51873fac30beca4ee05e</div>
+      <div class="platform-actions">
+        <a class="small-btn" href="/enkrit.apk" download="ENKRIT-Android-v1.0.1.apk">Download APK</a>
+      </div>
+    </div>
+
+    <div class="download-card">
+      <div class="platform-row">
+        <div>
+          <div class="platform-name">macOS Apple Silicon</div>
+          <div class="platform-desc">DMG for M1, M2, M3 and newer MacBook models.</div>
+        </div>
+        <span class="platform-chip">197 MB</span>
+      </div>
+      <div class="platform-meta">SHA-256: 66c641ada6fce2a759d74e9d6579673d154906493c0bdb8393575b0cd8112868</div>
+      <div class="platform-actions">
+        <a class="small-btn" href="/enkrit-mac-apple-silicon.dmg" download="ENKRIT-mac-Apple-Silicon-v1.0.1.dmg">Download DMG</a>
+      </div>
+    </div>
+
+    <div class="download-card">
+      <div class="platform-row">
+        <div>
+          <div class="platform-name">macOS Intel</div>
+          <div class="platform-desc">DMG for older Intel-based MacBook and iMac systems.</div>
+        </div>
+        <span class="platform-chip">202 MB</span>
+      </div>
+      <div class="platform-meta">SHA-256: 833525617b1fd7cd8b855751d9432a87b0200a9b1b1ce01703de485bc8380c70</div>
+      <div class="platform-actions">
+        <a class="small-btn" href="/enkrit-mac-intel.dmg" download="ENKRIT-mac-Intel-v1.0.1.dmg">Download DMG</a>
+      </div>
+    </div>
+
+    <div class="download-card">
+      <div class="platform-row">
+        <div>
+          <div class="platform-name">Windows x64</div>
+          <div class="platform-desc">ZIP package for Windows laptops and PCs. Extract, then run ENKRIT.exe.</div>
+        </div>
+        <span class="platform-chip">236 MB</span>
+      </div>
+      <div class="platform-meta">SHA-256: 14215a28720f4fefe7862250ceea7c45ef6d540b734d9d45966ef691d188d386</div>
+      <div class="platform-actions">
+        <a class="small-btn" href="/enkrit-windows-x64.zip" download="ENKRIT-Windows-x64-v1.0.1.zip">Download ZIP</a>
+      </div>
+    </div>
+
+    <div class="download-card">
+      <div class="platform-row">
+        <div>
+          <div class="platform-name">Windows 32-bit</div>
+          <div class="platform-desc">ZIP package for older 32-bit Windows systems. Extract, then run ENKRIT.exe.</div>
+        </div>
+        <span class="platform-chip">230 MB</span>
+      </div>
+      <div class="platform-meta">SHA-256: b7f925c230f94d66bcef0fb97e1bf887a2afbbe5b5554bb5132f2fa9b07e3f81</div>
+      <div class="platform-actions">
+        <a class="small-btn" href="/enkrit-windows-32bit.zip" download="ENKRIT-Windows-32bit-v1.0.1.zip">Download ZIP</a>
+      </div>
+    </div>
+
+    <div class="download-card disabled">
+      <div class="platform-row">
+        <div>
+          <div class="platform-name">iOS</div>
+          <div class="platform-desc">iPhone and iPad version is planned for a future ENKRIT release.</div>
+        </div>
+        <span class="platform-chip">SOON</span>
+      </div>
+      <div class="platform-actions">
+        <span class="small-btn disabled">Coming Soon</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="features">
+  <p class="section-title">// Features</p>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <span class="feat-num">01</span>
+      <div class="feat-content">
+        <div class="feat-name">All Formats Supported</div>
+        <div class="feat-desc">Play MP4, MKV, AVI, MOV and more without any conversion needed.</div>
+      </div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-num">02</span>
+      <div class="feat-content">
+        <div class="feat-name">Subtitle Support</div>
+        <div class="feat-desc">SRT, embedded subtitles — full support out of the box.</div>
+      </div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-num">03</span>
+      <div class="feat-content">
+        <div class="feat-name">Hardware Accelerated</div>
+        <div class="feat-desc">Smooth playback even on older devices. Zero lag, zero stutter.</div>
+      </div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-num">04</span>
+      <div class="feat-content">
+        <div class="feat-name">Zero Ads</div>
+        <div class="feat-desc">No banners, no popups, no interruptions. Just your video.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="install">
+  <p class="section-title">// How to Install</p>
+  <div class="step-card">
+    <div class="step-n">A</div>
+    <div class="step-text">
+      <strong>Android Phone / Tablet</strong>
+      <span>Download APK → open file → allow “Install unknown apps” if asked → tap Install</span>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="step-n">M1</div>
+    <div class="step-text">
+      <strong>MacBook Apple Silicon</strong>
+      <span>Download Apple Silicon DMG → open DMG → drag ENKRIT to Applications → open ENKRIT</span>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="step-n">MI</div>
+    <div class="step-text">
+      <strong>MacBook Intel</strong>
+      <span>Download Intel DMG → open DMG → drag ENKRIT to Applications → open ENKRIT</span>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="step-n">W</div>
+    <div class="step-text">
+      <strong>Windows Laptop / PC</strong>
+      <span>Download Windows ZIP → extract it → open the extracted folder → run ENKRIT.exe</span>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="step-n">iOS</div>
+    <div class="step-text">
+      <strong>iPhone / iPad</strong>
+      <span>iOS build is coming soon.</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>MADE BY DK</span>
+  <span>ENKRIT © 2026</span>
+</footer>
+
+</body>
+</html>
