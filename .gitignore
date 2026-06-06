@@ -13,6 +13,8 @@ tmp/
 *.aab
 *.dmg
 *.zip
+__pycache__/
+*.pyc
 android/.gradle/
 android/build/
 android/app/build/
