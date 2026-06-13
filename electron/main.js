@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, dialog, systemPreferences } = require("electron");
 const path  = require("path");
 const fs    = require("fs");
 const os    = require("os");
@@ -338,6 +338,22 @@ ipcMain.handle("open-media-dialog", async () => {
   });
   if(result.canceled) return [];
   return result.filePaths.map(mediaItemFromPath).filter(Boolean);
+});
+
+// Private vault — block screen capture while the vault is open (Windows + macOS)
+ipcMain.on("set-content-protection", (event, on) => {
+  try { if(win && !win.isDestroyed()) win.setContentProtection(!!on); } catch(_){}
+});
+
+// Private vault — macOS TouchID (Windows Hello needs a native module; returns false there)
+ipcMain.handle("request-biometric", async (event, reason) => {
+  try {
+    if(process.platform === "darwin" && systemPreferences.canPromptTouchID && systemPreferences.canPromptTouchID()){
+      await systemPreferences.promptTouchID(reason || "Unlock Private folder");
+      return true;
+    }
+  } catch(_){ }
+  return false;
 });
 
 ipcMain.handle("open-folder-dialog", async () => {

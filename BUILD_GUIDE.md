@@ -70,16 +70,47 @@ Output: dist/ENKRIT-1.0.0.AppImage
 
 ---
 
-## STEP 4D — BUILD FOR ANDROID / iPHONE
+## STEP 4D — BUILD FOR ANDROID
 
-See: android-setup/ANDROID_IOS_SETUP.md
+Native project lives in android/ (custom WebView host + ExoPlayer, no
+Capacitor at runtime).
 
-Short version:
-  npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios
-  npx cap init ENKRIT com.enkrit.app --web-dir src
-  npx cap add android
-  npx cap sync android
-  npx cap open android   ← opens Android Studio → Build APK
+  npm run android:build      ← debug APK (syncs web assets automatically)
+  npm run android:install    ← build + adb install
+
+Release APK: create android/keystore.properties, then:
+  cd android && ./gradlew assembleRelease
+
+---
+
+## STEP 4E — BUILD FOR iPHONE (iOS)
+
+Native Xcode project lives in ios/ (WKWebView host — same web UI as every
+other platform). Requires a Mac with Xcode 15+.
+
+1. Sync web assets (run after ANY change to src/):
+     ./ios/sync-web-assets.sh        (or: npm run ios:sync)
+
+2. Open the project:
+     open ios/ENKRIT.xcodeproj
+
+3. Xcode → target "ENKRIT" → Signing & Capabilities → select your Team
+   (a free Apple ID works for installing on your own iPhone).
+
+4. Plug in your iPhone, select it as the run destination, press ▶ (Cmd+R).
+   First install: on the iPhone go to Settings → General → VPN & Device
+   Management → trust your developer certificate.
+
+iOS notes:
+  - Library tab scans the Photos library (videos + audio); the open
+    button also offers the Files app picker (video + audio, multi-select).
+  - Playback uses the HTML <video> element — codec support is what iOS
+    provides natively (MP4/MOV/M4V with H.264/HEVC, MP3/AAC/WAV audio).
+    MKV/AVI will not decode on iOS.
+  - AI (Whisper) subtitles are desktop-only; loading .srt/.vtt works.
+  - Free Apple ID signing expires after 7 days — just rebuild from Xcode
+    to re-install. A paid Apple Developer account removes this limit and
+    enables TestFlight / App Store distribution.
 
 ---
 

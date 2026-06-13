@@ -2,11 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
 <title>ENKRIT</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-mode">
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem("enkrit_theme");
+    var a = localStorage.getItem("enkrit_accent");
+    if(t === "light") document.body.classList.remove("dark-mode");
+    if(a){
+      // Bug 20: normalize legacy accent names to avoid 1-frame flash
+      var legacyMap={blue:"prism",mint:"aurora",rose:"velvet",amber:"solar",violet:"nebula",cyan:"mono"};
+      var valid=new Set(["prism","aurora","solar","velvet","nebula","mono"]);
+      var norm=legacyMap[a]||a;
+      document.body.dataset.accent=valid.has(norm)?norm:"prism";
+    }
+  }catch(_){}
+})();
+</script>
 
 <div id="splash">
   <div class="splash-inner">
@@ -32,26 +49,6 @@
       <button class="tbtn" id="btnAddFolder" title="Open Folder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></button>
       <button class="tbtn" id="btnOpen" title="Open File"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
 
-      <div class="theme-wrap" id="themeWrap">
-        <button class="tbtn" id="btnTheme" title="Theme">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9c0-1.5-.37-2.91-1.03-4.15A2.5 2.5 0 0 1 16.5 4.38 8.9 8.9 0 0 0 12 3z"/><circle cx="8" cy="10" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16" cy="10" r="1"/><circle cx="11" cy="15" r="1"/></svg>
-          <span class="theme-current" id="themeCurrent"></span>
-        </button>
-        <div class="theme-menu" id="themeMenu">
-          <div class="theme-mode">
-            <button class="theme-mode-btn" id="themeDark">Dark</button>
-            <button class="theme-mode-btn" id="themeLight">Light</button>
-          </div>
-          <div class="theme-grid">
-            <button class="theme-choice active" data-accent="prism" style="--dot:#24f0c1;--dot2:#8b5cf6;--dot3:#ffd166"><span class="theme-swatch"></span><span class="theme-label">Prism Noir</span></button>
-            <button class="theme-choice" data-accent="aurora" style="--dot:#7dd3fc;--dot2:#34d399;--dot3:#f0f9ff"><span class="theme-swatch"></span><span class="theme-label">Aurora Ice</span></button>
-            <button class="theme-choice" data-accent="solar" style="--dot:#f97316;--dot2:#facc15;--dot3:#14b8a6"><span class="theme-swatch"></span><span class="theme-label">Solar Alloy</span></button>
-            <button class="theme-choice" data-accent="velvet" style="--dot:#fb7185;--dot2:#22d3ee;--dot3:#fef3c7"><span class="theme-swatch"></span><span class="theme-label">Velvet Pulse</span></button>
-            <button class="theme-choice" data-accent="nebula" style="--dot:#a3e635;--dot2:#06b6d4;--dot3:#f472b6"><span class="theme-swatch"></span><span class="theme-label">Nebula Lime</span></button>
-            <button class="theme-choice" data-accent="mono" style="--dot:#e5e7eb;--dot2:#38bdf8;--dot3:#111827"><span class="theme-swatch"></span><span class="theme-label">Chrome Mono</span></button>
-          </div>
-        </div>
-      </div>
       <button class="tbtn" id="btnSidebar" title="Playlist"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg></button>
     </div>
   </header>
@@ -85,13 +82,37 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Scan Library
               </button>
+              <div class="theme-wrap" id="themeWrap">
+                <button class="lib-btn tbtn" id="btnTheme" title="Theme">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9c0-1.5-.37-2.91-1.03-4.15A2.5 2.5 0 0 1 16.5 4.38 8.9 8.9 0 0 0 12 3z"/><circle cx="8" cy="10" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16" cy="10" r="1"/><circle cx="11" cy="15" r="1"/></svg>
+                  <span class="theme-current" id="themeCurrent"></span>
+                </button>
+                <div class="theme-menu" id="themeMenu">
+                  <div class="theme-mode">
+                    <button class="theme-mode-btn" id="themeDark">Dark</button>
+                    <button class="theme-mode-btn" id="themeLight">Light</button>
+                  </div>
+                  <div class="theme-grid">
+                    <button class="theme-choice active" data-accent="prism" style="--dot:#24f0c1;--dot2:#8b5cf6;--dot3:#ffd166"><span class="theme-swatch"></span><span class="theme-label">Prism Noir</span></button>
+                    <button class="theme-choice" data-accent="aurora" style="--dot:#7dd3fc;--dot2:#34d399;--dot3:#f0f9ff"><span class="theme-swatch"></span><span class="theme-label">Aurora Ice</span></button>
+                    <button class="theme-choice" data-accent="solar" style="--dot:#f97316;--dot2:#facc15;--dot3:#14b8a6"><span class="theme-swatch"></span><span class="theme-label">Solar Alloy</span></button>
+                    <button class="theme-choice" data-accent="velvet" style="--dot:#fb7185;--dot2:#22d3ee;--dot3:#fef3c7"><span class="theme-swatch"></span><span class="theme-label">Velvet Pulse</span></button>
+                    <button class="theme-choice" data-accent="nebula" style="--dot:#a3e635;--dot2:#06b6d4;--dot3:#f472b6"><span class="theme-swatch"></span><span class="theme-label">Nebula Lime</span></button>
+                    <button class="theme-choice" data-accent="mono" style="--dot:#e5e7eb;--dot2:#38bdf8;--dot3:#111827"><span class="theme-swatch"></span><span class="theme-label">Chrome Mono</span></button>
+                  </div>
+                </div>
+              </div>
+              <button class="lib-btn" id="btnSettings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                Settings
+              </button>
             </div>
           </div>
 
           <!-- SECTION TABS -->
           <div class="lib-tabs">
-            <button class="lib-tab active" data-tab="recent">Recently Played</button>
-            <button class="lib-tab" data-tab="library">My Library</button>
+            <button class="lib-tab" data-tab="recent">Recently Played</button>
+            <button class="lib-tab active" data-tab="library">My Library</button>
             <button class="lib-tab" data-tab="favorites">Favorites</button>
           </div>
           <div class="lib-tools" id="libTools">
@@ -106,12 +127,24 @@
               <option value="size">Size</option>
               <option value="long">Duration</option>
             </select>
+            <div class="lib-sort-pills" id="libSortPills">
+              <button class="sort-pill active" data-sort="recent">Newest</button>
+              <button class="sort-pill" data-sort="name">Name</button>
+              <button class="sort-pill" data-sort="size">Size</button>
+              <button class="sort-pill" data-sort="long">Duration</button>
+            </div>
           </div>
           <div class="recent-tools" id="recentTools" style="display:none">
             <button class="recent-clear-btn" data-clear-recent="today">Clear Today</button>
             <button class="recent-clear-btn" data-clear-recent="yesterday">Yesterday</button>
             <button class="recent-clear-btn" data-clear-recent="older">Older 7d</button>
             <button class="recent-clear-btn danger" data-clear-recent="all">Clear All</button>
+          </div>
+
+          <!-- PULL-TO-REFRESH INDICATOR -->
+          <div class="ptr-indicator" id="ptrIndicator">
+            <div class="ptr-spinner"></div>
+            <span class="ptr-label" id="ptrLabel">Pull to refresh</span>
           </div>
 
           <!-- SCANNING STATE -->
@@ -130,11 +163,29 @@
 
           <!-- VIDEO GRID -->
           <div class="lib-grid" id="libGrid"></div>
+
+          <!-- MINI PLAYER (shows when a video is paused/playing and user is in library) -->
+          <div id="miniPlayer" class="mini-player" style="display:none">
+            <div class="mini-player-thumb" id="miniThumb">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" opacity="0.7"><polygon points="5,3 19,12 5,21"/></svg>
+            </div>
+            <div class="mini-player-info">
+              <div class="mini-player-name" id="miniName">-</div>
+              <div class="mini-player-status" id="miniStatus">Tap to resume</div>
+            </div>
+            <button class="mini-player-playbtn" id="miniPlayBtn" title="Play/Pause">
+              <svg id="miniIconPlay" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+              <svg id="miniIconPause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <button class="mini-player-close" id="miniClose" title="Dismiss">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
         </div>
       </div>
 
       <div id="videoContainer" style="display:none">
-        <video id="videoEl" preload="auto"></video>
+        <video id="videoEl" preload="auto" playsinline webkit-playsinline></video>
         <div id="subtitleDisplay" class="subtitle-off"></div>
         <div id="seekFeedback" class="seek-feedback"></div>
         <div id="gestureHud" class="gesture-hud" aria-hidden="true">
@@ -149,10 +200,25 @@
         </div>
         <div class="tap-zone tap-zone-left" id="tapLeft">-5s</div>
         <div class="tap-zone tap-zone-right" id="tapRight">+5s</div>
+        <!-- Hint pill: shows when controls are hidden so user knows to tap -->
+        <div class="controls-hint-pill" id="controlsHintPill"></div>
         <button class="screen-lock-btn" id="screenLockBtn" title="Lock Screen">
           <svg class="screen-lock-open" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.7-1.6"/></svg>
           <svg class="screen-lock-closed" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </button>
+
+        <!-- PLAYER TOP BAR -->
+        <div id="playerTopBar" class="player-top-bar">
+          <button class="player-back-btn" id="btnBackToLib">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          </button>
+          <span class="player-top-title" id="playerTopTitle">ENKRIT</span>
+          <div class="player-top-right">
+            <button class="player-top-btn" id="btnTopSettings" title="Settings">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            </button>
+          </div>
+        </div>
 
         <!-- FLOATING DRAGGABLE CONTROLS -->
         <div id="controls" class="controls-float">
@@ -178,6 +244,10 @@
               <span id="timeNow">0:00</span>
               <span id="timeDur">0:00</span>
             </div>
+            <div class="seek-preview-bubble" id="seekBubble" aria-hidden="true">
+              <img id="seekBubbleImg" alt="">
+              <span id="seekBubbleTime">0:00</span>
+            </div>
             <div class="progress-bar-wrap" id="progressWrap">
               <div class="progress-bg"></div>
               <div class="progress-buffered" id="progressBuf"></div>
@@ -187,6 +257,9 @@
           </div>
           <div class="controls-row">
             <div class="ctrl-left">
+              <button class="ctrl-btn" id="btnLockRow" title="Lock screen">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+              </button>
               <button class="ctrl-btn" id="btnPrev" title="Previous (B)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
               <button class="ctrl-btn seek-btn" id="btnBack5" title="Back 5s"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span class="seek-label">5</span></button>
               <button class="ctrl-btn play-btn" id="btnPlay">
@@ -239,16 +312,6 @@
                   </div>
                 </div>
               </div>
-              <button class="ctrl-btn" id="btnShuffle" title="Shuffle">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
-              </button>
-              <button class="ctrl-btn" id="btnRepeat" title="Repeat">
-                <svg id="iconRepeat" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m17 1 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 23-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                <span class="repeat-one" id="repeatOne">1</span>
-              </button>
-              <button class="ctrl-btn" id="btnSleep" title="Sleep Timer">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
-              </button>
               <div class="sub-wrap">
                 <button class="ctrl-btn sub-btn" id="btnSub" title="Subtitles">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M7 15h4M13 15h4M7 11h2M11 11h6"/></svg>
@@ -259,14 +322,110 @@
                   <button class="sub-opt active" id="subOff" title="Subtitles Off"><span class="sub-opt-icon">✕</span><span>Off</span></button>
                   <button class="sub-opt" id="subAuto" title="Generate AI Subtitles"><span class="sub-opt-icon">AI</span><span>AI</span></button>
                   <button class="sub-opt" id="subFile" title="Load SRT File"><span class="sub-opt-icon">SRT</span><span>SRT</span></button>
+                  <div class="sub-tracks" id="subTracks"></div>
                   <div class="sub-info">Offline</div>
                 </div>
               </div>
-              <button class="ctrl-btn" id="btnFilter" title="Video Filters"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></button>
-              <div class="resize-wrap">
+              <button class="ctrl-btn" id="btnPip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="13" y="11" width="8" height="6" rx="1" fill="currentColor" stroke="none" opacity="0.7"/></svg></button>
+              <button class="ctrl-btn" id="btnFull">
+                <svg id="iconFull" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <svg id="iconExit" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+              </button>
+              <button class="ctrl-btn" id="btnMore" title="More">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- MORE SHEET (MX-style) -->
+          <div id="moreSheet" class="more-sheet">
+            <div class="more-sheet-head">
+              <span>More</span>
+              <button class="more-close" id="moreClose">✕</button>
+            </div>
+            <div class="more-grid">
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnShuffle" title="Shuffle">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+                </button>
+                <span class="more-label">Shuffle</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnRepeat" title="Repeat">
+                  <svg id="iconRepeat" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m17 1 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 23-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  <span class="repeat-one" id="repeatOne">1</span>
+                </button>
+                <span class="more-label">Repeat</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnSleep" title="Sleep Timer">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
+                </button>
+                <span class="more-label">Sleep</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnABRepeat" title="A-B Repeat">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+                </button>
+                <span class="more-label" id="abLabel">A-B</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnAudioTrack" title="Audio Track">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                </button>
+                <span class="more-label">Audio</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnBoost" title="Volume Boost">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9v6h4l5 5V4L7 9H3z"/><path d="M16 7s2 1.5 2 5-2 5-2 5"/><path d="M19.5 4.5S23 7 23 12s-3.5 7.5-3.5 7.5"/></svg>
+                </button>
+                <span class="more-label" id="boostLabel">Boost</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnDialogue" title="Dialogue Enhance">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12h5"/></svg>
+                </button>
+                <span class="more-label">Dialogue</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnBookmark" title="Bookmarks">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                </button>
+                <span class="more-label">Bookmark</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnShot" title="Screenshot">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+                <span class="more-label">Shot</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnExtractAudio" title="Extract Audio">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M3 3l3 3"/></svg>
+                </button>
+                <span class="more-label">MP3</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnGif" title="GIF Maker">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M8.5 10.5H7a1.5 1.5 0 0 0 0 3h1.5v-1.5H8"/><path d="M12 10v4"/><path d="M15 14v-4h3M15 12h2.4"/></svg>
+                </button>
+                <span class="more-label" id="gifLabel">GIF</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnEco" title="Battery Saver">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66L13 3h1l-1 7h3.5c.49 0 .56.33.47.51z"/></svg>
+                </button>
+                <span class="more-label" id="ecoLabel">Eco</span>
+              </div>
+              <div class="more-item">
+                <button class="ctrl-btn" id="btnFilter" title="Video Filters"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></button>
+                <span class="more-label">Filters</span>
+              </div>
+              <div class="more-item resize-wrap">
                 <button class="ctrl-btn" id="btnResize" title="Video Size">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="M9 21H3v-6"/><path d="m3 21 7-7"/></svg>
                 </button>
+                <span class="more-label">Resize</span>
                 <div class="resize-panel" id="resizePanel">
                   <button class="resize-opt" data-zoom="0.75">75%</button>
                   <button class="resize-opt active" data-zoom="1">Fit</button>
@@ -276,21 +435,17 @@
                   <button class="resize-opt" data-zoom="3">300%</button>
                 </div>
               </div>
-              <button class="ctrl-btn" id="btnPip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="13" y="11" width="8" height="6" rx="1" fill="currentColor" stroke="none" opacity="0.7"/></svg></button>
-              <div class="orient-wrap">
+              <div class="more-item orient-wrap">
                 <button class="ctrl-btn" id="btnOrient" title="Orientation">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M12 18h.01M4 8 2 6l2-2M20 16l2 2-2 2M2 6h4M18 18h4"/></svg>
                 </button>
+                <span class="more-label">Rotate</span>
                 <div class="orient-panel" id="orientPanel">
                   <button class="orient-opt" data-orient="auto">Auto</button>
                   <button class="orient-opt active" data-orient="portrait">Portrait</button>
                   <button class="orient-opt" data-orient="landscape">Landscape</button>
                 </div>
               </div>
-              <button class="ctrl-btn" id="btnFull">
-                <svg id="iconFull" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-                <svg id="iconExit" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-              </button>
             </div>
           </div>
         </div>
@@ -375,6 +530,169 @@
 
       <button class="reset-btn" id="filterReset">↺ Reset All to Default</button>
     </div>
+  </div>
+</div>
+
+<!-- CARD CONTEXT MENU -->
+<div id="cardContextMenu" class="context-menu" style="display:none">
+  <div class="ctx-header">
+    <div class="ctx-thumb" id="ctxThumb">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" opacity="0.6"><polygon points="5,3 19,12 5,21"/></svg>
+    </div>
+    <div class="ctx-title" id="ctxTitle">-</div>
+  </div>
+  <button class="ctx-item" id="ctxPlay">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+    <span>Play</span>
+  </button>
+  <button class="ctx-item" id="ctxFav">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2 2 9.3l6.9-1z"/></svg>
+    <span id="ctxFavLabel">Add to Favorites</span>
+  </button>
+  <button class="ctx-item" id="ctxInfo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <span>File Info</span>
+  </button>
+  <button class="ctx-item ctx-item-danger" id="ctxDelete">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+    <span>Delete</span>
+  </button>
+  <button class="ctx-item ctx-item-cancel" id="ctxCancel">Cancel</button>
+</div>
+<div class="context-menu-backdrop" id="ctxBackdrop" style="display:none"></div>
+
+<!-- FILE INFO SHEET -->
+<div id="fileInfoSheet" class="info-sheet" style="display:none">
+  <div class="info-sheet-handle"></div>
+  <div class="info-sheet-title">File Info</div>
+  <div class="info-rows" id="infoRows"></div>
+  <button class="info-close" id="infoClose">Done</button>
+</div>
+<div class="info-sheet-backdrop" id="infoBackdrop" style="display:none"></div>
+
+<!-- SWIPE-DOWN DISMISS INDICATOR -->
+<div id="swipeDownIndicator" class="swipe-down-indicator" style="display:none">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+  <span>Release to go back</span>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div id="settingsPanel" class="settings-panel" style="display:none">
+  <div class="settings-header">
+    <button class="settings-back-btn" id="btnSettingsBack">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="settings-title">Settings</span>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-label">Display</div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Show Recently Played</div><div class="settings-item-sub">Show Recently Played shortcuts.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sShowRecentlyPlayed"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polygon points="10,8 16,12 10,16"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Show floating play button</div><div class="settings-item-sub">Quick access to continue last video.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sShowFloatingBtn"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item" id="sFolderViewItem">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Folder View</div><div class="settings-item-sub" id="sFolderViewSub">Grid (2 columns)</div></div>
+      <svg class="settings-item-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+
+    <div class="settings-section-label">Files</div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Blacklist</div><div class="settings-item-sub">Control which folders are visible or hidden.</div></div>
+      <svg class="settings-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Show .nomedia files</div><div class="settings-item-sub">Show files in folders containing .nomedia file.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sShowNomedia"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Show hidden files</div><div class="settings-item-sub">Show files starting with dot(.).</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sShowHidden"><span class="stgl-track"></span></label>
+    </div>
+
+    <div class="settings-section-label">Playback</div>
+    <div class="settings-item" id="sResumeItem">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Resume playback</div><div class="settings-item-sub" id="sResumeSub">Ask every time</div></div>
+      <svg class="settings-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Remember brightness</div><div class="settings-item-sub">When turned off, follows system brightness.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sRememberBrightness"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Remember background play</div><div class="settings-item-sub">Remember background play for all videos.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sRememberBgPlay"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Remember aspect ratio</div><div class="settings-item-sub">Remember aspect ratio for all videos.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sRememberAspect"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.18-5.2"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Remember speed</div><div class="settings-item-sub">Remember speed for all videos.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sRememberSpeed"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item" id="sOrientItem">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M12 18h.01"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Default screen orientation</div><div class="settings-item-sub" id="sOrientSub">Auto rotate (Sensor)</div></div>
+      <svg class="settings-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="settings-item" id="sSeekItem">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Fast forward and rewind time</div><div class="settings-item-sub" id="sSeekSub">5s</div></div>
+      <svg class="settings-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14l1 7H4L5 4z"/><path d="M12 15v6M8 21h8"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Autoplay next</div><div class="settings-item-sub">When off, exit playback after video ends.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sAutoplayNext"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="13" y="10" width="8" height="6" rx="1" fill="currentColor" opacity="0.5" stroke="none"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Auto PiP</div><div class="settings-item-sub">Automatically enter Picture-in-Picture when switching apps.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sAutoPip"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6H9"/><path d="m15 8 3 3-3 3"/><path d="M6 16v1a2 2 0 0 0 4 0v-5"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Gesture control</div><div class="settings-item-sub">Brightness, volume, and seek gestures.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sGestureControl"><span class="stgl-track"></span></label>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M7 15h4M13 15h4M7 11h2M11 11h6"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Show subtitles</div><div class="settings-item-sub">Show subtitles by default.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sShowSubtitles"><span class="stgl-track"></span></label>
+    </div>
+
+    <div class="settings-section-label">Music</div>
+    <div class="settings-item">
+      <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+      <div class="settings-item-info"><div class="settings-item-title">Music</div><div class="settings-item-sub">Show music files in library.</div></div>
+      <label class="settings-toggle"><input type="checkbox" id="sShowMusic"><span class="stgl-track"></span></label>
+    </div>
+
+    <div class="settings-version">Version 1.0.1</div>
+  </div>
+</div>
+
+<!-- SETTINGS DIALOG -->
+<div id="settingsDialog" class="settings-dialog-overlay" style="display:none">
+  <div class="settings-dialog-box">
+    <div class="settings-dialog-title" id="settingsDialogTitle"></div>
+    <div class="settings-dialog-opts" id="settingsDialogOpts"></div>
+    <button class="settings-dialog-cancel" id="settingsDialogCancel">Cancel</button>
   </div>
 </div>
 

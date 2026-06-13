@@ -41,6 +41,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return await ipcRenderer.invoke("open-folder-dialog");
   },
 
+  // Private vault: block screen capture (Win + Mac) while the vault is open
+  setContentProtection: (on) => { ipcRenderer.send("set-content-protection", !!on); },
+  // Private vault: OS biometric (mac TouchID; Windows Hello not built-in)
+  requestBiometric: async (reason) => await ipcRenderer.invoke("request-biometric", reason),
+
 });
 
 // Library scanning

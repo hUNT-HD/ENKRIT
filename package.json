@@ -19,6 +19,7 @@
   "scripts": {
     "start": "electron .",
     "android:build": "cd android && JAVA_HOME=\"${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}\" ./gradlew assembleDebug",
+    "ios:sync": "bash ios/sync-web-assets.sh",
     "android:install": "cd android && JAVA_HOME=\"${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}\" ./gradlew installDebug",
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win zip --x64 --ia32",
