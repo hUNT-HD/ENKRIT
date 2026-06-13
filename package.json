@@ -1,6 +1,6 @@
 {
   "name": "enkrit",
-  "version": "1.0.1",
+  "version": "1.2.1",
   "description": "Premium offline video player — ENKRIT",
   "main": "electron/main.js",
   "author": {

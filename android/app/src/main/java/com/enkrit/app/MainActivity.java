@@ -114,8 +114,28 @@ public class MainActivity extends Activity {
                     "window.ENKRITAndroid&&window.ENKRITAndroid.onAppPaused&&window.ENKRITAndroid.onAppPaused();", null);
         }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Background play: by default, pause ExoPlayer when the Activity is no
+        // longer visible (Home / app switch) so audio doesn't keep running
+        // unexpectedly. When the user has enabled background play, leave the
+        // player running so audio continues.
+        //
+        // Picture-in-Picture is exempt either way: an active PiP window means
+        // the player is intentionally still on screen, so never pause it here.
+        boolean inPip = Build.VERSION.SDK_INT >= 24 && isInPictureInPictureMode();
+        if (!backgroundPlayEnabled && !inPip && player != null) {
+            player.pause();
+        }
+    }
     private boolean nativePlayerVisible = false;
     private boolean brightnessOverridden = false;
+    // Background play: when true, ExoPlayer keeps playing audio after the
+    // Activity is stopped (Home/app switch). When false (default), the player
+    // is paused on background. Set from JS via AndroidBridge.setBackgroundPlay.
+    private volatile boolean backgroundPlayEnabled = false;
     private Uri pendingDeleteUri;
     private int nativeVideoWidth = 0;
     private int nativeVideoHeight = 0;
@@ -2169,6 +2189,12 @@ public class MainActivity extends Activity {
                     startActivity(Intent.createChooser(i, "Share"));
                 } catch (Exception ignored) {}
             });
+        }
+
+        @JavascriptInterface
+        public void setBackgroundPlay(boolean enabled) {
+            // Lightweight flag set — read later from the lifecycle (onStop).
+            backgroundPlayEnabled = enabled;
         }
 
         @JavascriptInterface

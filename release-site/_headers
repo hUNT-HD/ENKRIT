@@ -1,0 +1,12 @@
+/downloads/*.apk
+  Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment
+  Cache-Control: public, max-age=0, must-revalidate
+
+/downloads/*.zip
+  Content-Type: application/zip
+  Content-Disposition: attachment
+
+/downloads/*.dmg
+  Content-Type: application/x-apple-diskimage
+  Content-Disposition: attachment

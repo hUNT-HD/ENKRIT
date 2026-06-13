@@ -157,6 +157,10 @@ class ViewController: UIViewController {
             setOrientationMode:  function(m) { POST('setOrientationMode',  [m]); },
             setImmersive:        function(v) { POST('setImmersive',        [v]); },
             setScreenBrightness: function(v) { POST('setScreenBrightness', [v]); },
+            setBackgroundPlay:   function(v) { POST('setBackgroundPlay',   [v]); },
+
+            // Native share sheet (GIFs / screenshots / exported audio)
+            shareUri:            function(u, m) { POST('shareUri', [u, m]); },
 
             // Permissions
             hasMediaPermission:    function() { return true; },
@@ -244,6 +248,12 @@ class ViewController: UIViewController {
         case "setScreenBrightness":
             if let v = args.first as? CGFloat { UIScreen.main.brightness = v / 100.0 }
             else if let v = args.first as? Int { UIScreen.main.brightness = CGFloat(v) / 100.0 }
+        case "setBackgroundPlay":
+            setBackgroundPlay(args.first as? Bool ?? false)
+        case "shareUri":
+            let uri  = args.first as? String ?? ""
+            let mime = (args.count > 1 ? args[1] : nil) as? String
+            shareUri(uri: uri, mime: mime)
         case "setVideoFilter":
             // On iOS, CSS filters are applied by app.js itself since S.nativePlayback is false.
             break
@@ -296,6 +306,95 @@ class ViewController: UIViewController {
             }
             UIViewController.attemptRotationToDeviceOrientation()
         }
+    }
+
+    // MARK: - Background Play
+
+    func setBackgroundPlay(_ enabled: Bool) {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            if enabled {
+                // Keep HTML <video> audio alive when backgrounded / screen locked.
+                // NOTE: requires UIBackgroundModes to include "audio" in Info.plist
+                // for the audio to keep playing once the app is backgrounded.
+                try session.setCategory(
+                    .playback,
+                    mode: .moviePlayback,
+                    options: [.mixWithOthers, .allowAirPlay]
+                )
+                try session.setActive(true)
+            } else {
+                // Revert to the app's default configuration (matches setupAudioSession).
+                try session.setCategory(
+                    .playback,
+                    mode: .moviePlayback,
+                    options: [.mixWithOthers, .allowAirPlay]
+                )
+                try session.setActive(true)
+            }
+        } catch {
+            print("ENKRIT: setBackgroundPlay error: \(error)")
+        }
+    }
+
+    // MARK: - Native Share Sheet
+
+    func shareUri(uri: String, mime: String?) {
+        guard let fileURL = resolveShareURL(uri) else {
+            print("ENKRIT: shareUri could not resolve: \(uri)")
+            return
+        }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let activity = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            // iPad requires a source anchor or presenting crashes.
+            if let pop = activity.popoverPresentationController {
+                pop.sourceView = self.view
+                pop.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                pop.permittedArrowDirections = []
+            }
+            self.topPresentedController().present(activity, animated: true)
+        }
+    }
+
+    /// Maps a web-supplied uri (plain path, file:// URL, or enkrit-media://local/<path>)
+    /// to an on-disk file URL. ph:// assets are not directly shareable here → nil.
+    private func resolveShareURL(_ uri: String) -> URL? {
+        guard !uri.isEmpty else { return nil }
+
+        // Plain absolute path
+        if uri.hasPrefix("/") {
+            return FileManager.default.fileExists(atPath: uri) ? URL(fileURLWithPath: uri) : nil
+        }
+
+        // file:// URL
+        if uri.hasPrefix("file://") {
+            if let url = URL(string: uri), url.isFileURL {
+                return FileManager.default.fileExists(atPath: url.path) ? url : nil
+            }
+            return nil
+        }
+
+        // enkrit-media://local/<percent-encoded-path>
+        if uri.hasPrefix("enkrit-media://local") {
+            let rest = String(uri.dropFirst("enkrit-media://local".count))
+            let decoded = rest.removingPercentEncoding ?? rest
+            guard decoded.hasPrefix("/") else { return nil }
+            return FileManager.default.fileExists(atPath: decoded) ? URL(fileURLWithPath: decoded) : nil
+        }
+
+        // ph:// and other schemes are not directly shareable as files here.
+        return nil
+    }
+
+    /// Walks the presented-controller chain so the share sheet appears above any
+    /// picker/alert that may already be on screen.
+    private func topPresentedController() -> UIViewController {
+        var top: UIViewController = self
+        while let presented = top.presentedViewController {
+            top = presented
+        }
+        return top
     }
 
     // MARK: - Library Scan

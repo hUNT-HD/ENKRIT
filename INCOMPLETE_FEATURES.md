@@ -2,6 +2,13 @@
 
 Audited: 2026-06-13. These are features that *look* like they exist (UI is present, or a setting is declared) but are not actually wired end-to-end, so they do nothing or only partly work. Verified by checking both sides — the declaration AND the usage — to avoid false positives. Synced copies under `android/.../assets/www/` and `ios/ENKRIT/www/` are ignored; only source files were audited.
 
+> **STATUS: ALL IMPLEMENTED (2026-06-13).** Every item below has been completed in `src/app.js`, `src/index.html`, `android/MainActivity.java`, and `ios/ViewController.swift`. JS passes `node --check`; native files are brace-balanced; `src/` was re-synced to `ios/ENKRIT/www/`. Two manual follow-ups remain (you must do these in the native projects — they can't be done from the web/source files):
+>
+> 1. **iOS background play** needs `UIBackgroundModes = [audio]` added to the iOS app's `Info.plist`, or background audio won't actually keep playing when the screen locks. The AVAudioSession code is done.
+> 2. **Android reliable background play** currently keeps ExoPlayer alive when backgrounded (minimal approach). For production-grade reliability (surviving memory pressure, lock-screen controls) add a `media3 MediaSessionService` foreground service + `FOREGROUND_SERVICE_MEDIA_PLAYBACK` permission. Optional follow-up.
+> 3. **Share** is wired to the GIF export (which returns a real URI). Screenshot and audio-extract only return a filename, not a shareable content URI — to add Share for those, surface the saved URI from the native `onShotSaved`/`onAudioExtracted` callbacks, then one `showSharePrompt(...)` call extends it.
+> 4. **Behavior note (Android):** with background-play OFF (default), audio now pauses when the app is backgrounded. Previously it incidentally kept playing — this change is intended so the new setting is meaningful.
+
 ## Fully dead (does nothing at all)
 
 **1. Blacklist** — `src/index.html:608`, `src/app.js:4` (`blacklist: []`). The settings row has no `id`, no click handler, and no editor panel; the `blacklist` array is never read during folder filtering. Clicking it does nothing, and even a manually-set value would never hide any folder. (This is the one you noticed.)

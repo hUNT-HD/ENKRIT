@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ENKRIT — Download v1.2.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0c; --bg2:#121217; --bg3:#1a1a22;
+    --accent:#6C63FF; --accent2:#4ECDC4;
+    --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
+    --text:#f2f2f5; --text2:#9a9aa6; --text3:#5a5a66;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #1b1b3a33, transparent 60%), var(--bg);
+    color:var(--text); font-family:'Outfit',sans-serif; min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:48px 20px 64px;
+  }
+  .badge-dummy{
+    font-family:'Space Mono',monospace; font-size:11px; letter-spacing:1px;
+    text-transform:uppercase; color:var(--accent2);
+    border:1px solid var(--border2); border-radius:999px; padding:6px 14px;
+    margin-bottom:32px; background:#4ECDC411;
+  }
+  .logo{width:108px;height:auto;margin-bottom:18px;filter:drop-shadow(0 8px 30px #6C63FF55)}
+  h1{font-size:46px;font-weight:700;letter-spacing:-1px;margin-bottom:8px}
+  .ver{
+    display:inline-block;font-family:'Space Mono',monospace;font-size:13px;
+    color:#fff;background:linear-gradient(90deg,var(--accent),#8b7bff);
+    padding:5px 14px;border-radius:8px;margin-bottom:14px;font-weight:700;
+  }
+  .tagline{color:var(--text2);font-size:17px;max-width:520px;text-align:center;line-height:1.6;margin-bottom:44px}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:18px;width:100%;max-width:760px;
+  }
+  .platform-label{
+    grid-column:1/-1;font-family:'Space Mono',monospace;font-size:12px;
+    letter-spacing:2px;text-transform:uppercase;color:var(--text3);
+    margin:22px 4px 2px;
+  }
+  .card{
+    background:linear-gradient(180deg,var(--bg2),var(--bg2));
+    border:1px solid var(--border);border-radius:18px;padding:22px 22px 20px;
+    display:flex;flex-direction:column;gap:14px;transition:.18s;
+  }
+  .card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 14px 40px #0008}
+  .card .top{display:flex;align-items:center;gap:12px}
+  .ico{width:40px;height:40px;flex:0 0 40px;border-radius:11px;display:grid;place-items:center;background:var(--bg3);border:1px solid var(--border2)}
+  .ico svg{width:22px;height:22px;stroke:var(--text);fill:none;stroke-width:1.8}
+  .card h3{font-size:16px;font-weight:600}
+  .card .sub{font-size:12.5px;color:var(--text2);font-family:'Space Mono',monospace}
+  .dl{
+    margin-top:auto;display:flex;align-items:center;justify-content:center;gap:8px;
+    text-decoration:none;color:#fff;font-weight:600;font-size:14.5px;
+    background:linear-gradient(90deg,var(--accent),#7a6dff);
+    padding:12px;border-radius:11px;transition:.15s;
+  }
+  .dl:hover{filter:brightness(1.12)}
+  .dl svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+  .dl.alt{background:var(--bg3);border:1px solid var(--border2)}
+  .dl.android{background:linear-gradient(90deg,#3DDC84,#2bbf6e);color:#04200f}
+  .dl.android svg{stroke:#04200f}
+
+  .notes{max-width:760px;width:100%;margin-top:40px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:22px 24px}
+  .notes h4{font-size:14px;margin-bottom:10px;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;text-transform:uppercase}
+  .notes p{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:6px}
+  .notes b{color:var(--text)}
+  footer{margin-top:40px;color:var(--text3);font-size:12.5px;font-family:'Space Mono',monospace}
+</style>
+</head>
+<body>
+  <div class="badge-dummy">● Test / Dummy Release Page</div>
+  <img class="logo" src="logo.png" alt="ENKRIT logo" />
+  <h1>ENKRIT</h1>
+  <div class="ver">v1.2.1</div>
+  <p class="tagline">Offline media player for macOS, Windows &amp; Android. Pick your platform below to download the latest build.</p>
+
+  <div class="grid">
+
+    <div class="platform-label">macOS</div>
+    <div class="card">
+      <div class="top">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 20.9c-1.7 0-2.4-1.1-4-1.1s-2.6 1.1-4 .9C1.6 19.3 1 14 3 11c1-1.5 2.6-2.4 4.1-2.4 1.6 0 2.4 1.1 3.9 1.1 1.4 0 2.1-1.1 4-1.1 1.3 0 2.7.7 3.7 2-3.2 1.8-2.7 6.4.6 7.7-.6 1.3-1.5 2.7-3 3.7-.7.5-1.5 1.1-2.3 1.1z"/><path d="M12 6c0-1.7 1.4-3 3-3 .2 1.8-1.6 3.2-3 3z"/></svg></div>
+        <div><h3>Apple Silicon</h3><div class="sub">.dmg · M1/M2/M3 · ~207 MB</div></div>
+      </div>
+      <a class="dl" href="downloads/ENKRIT-1.2.1-arm64.dmg" download>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Download</a>
+    </div>
+    <div class="card">
+      <div class="top">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 20.9c-1.7 0-2.4-1.1-4-1.1s-2.6 1.1-4 .9C1.6 19.3 1 14 3 11c1-1.5 2.6-2.4 4.1-2.4 1.6 0 2.4 1.1 3.9 1.1 1.4 0 2.1-1.1 4-1.1 1.3 0 2.7.7 3.7 2-3.2 1.8-2.7 6.4.6 7.7-.6 1.3-1.5 2.7-3 3.7-.7.5-1.5 1.1-2.3 1.1z"/><path d="M12 6c0-1.7 1.4-3 3-3 .2 1.8-1.6 3.2-3 3z"/></svg></div>
+        <div><h3>Intel</h3><div class="sub">.dmg · x64 Macs · ~212 MB</div></div>
+      </div>
+      <a class="dl alt" href="downloads/ENKRIT-1.2.1-intel.dmg" download>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Download</a>
+    </div>
+
+    <div class="platform-label">Windows</div>
+    <div class="card">
+      <div class="top">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 5.5l8-1.1v7.2H3zM13 4.1l8-1.1v8.6h-8zM3 12.4h8v7.2l-8-1.1zM13 12.4h8v8.6l-8-1.1z" stroke-linejoin="round"/></svg></div>
+        <div><h3>Windows 64-bit</h3><div class="sub">.zip · x64 · ~346 MB</div></div>
+      </div>
+      <a class="dl" href="downloads/ENKRIT-Windows-x64-v1.2.1.zip" download>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Download</a>
+    </div>
+    <div class="card">
+      <div class="top">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 5.5l8-1.1v7.2H3zM13 4.1l8-1.1v8.6h-8zM3 12.4h8v7.2l-8-1.1zM13 12.4h8v8.6l-8-1.1z" stroke-linejoin="round"/></svg></div>
+        <div><h3>Windows 32-bit</h3><div class="sub">.zip · ia32 · ~339 MB</div></div>
+      </div>
+      <a class="dl alt" href="downloads/ENKRIT-Windows-ia32-v1.2.1.zip" download>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Download</a>
+    </div>
+
+    <div class="platform-label">Android</div>
+    <div class="card" style="grid-column:1/-1">
+      <div class="top">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M6 9h12v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2zM9 19v2M15 19v2M7 9c0-2.8 2.2-5 5-5s5 2.2 5 5M9.5 6.5l-1-1.5M14.5 6.5l1-1.5"/></svg></div>
+        <div><h3>Android APK</h3><div class="sub">.apk · Android 6.0+ (min SDK 23) · ~3.6 MB</div></div>
+      </div>
+      <a class="dl android" href="downloads/ENKRIT-Android-v1.2.1.apk" download>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Download APK</a>
+    </div>
+
+  </div>
+
+  <div class="notes">
+    <h4>Install notes</h4>
+    <p><b>macOS</b> — builds are unsigned. On first launch: right-click the app → Open, or System Settings → Privacy &amp; Security → "Open Anyway".</p>
+    <p><b>Windows</b> — extract the ZIP and run <b>ENKRIT.exe</b>. If SmartScreen warns, click "More info" → "Run anyway".</p>
+    <p><b>Android</b> — enable "Install unknown apps" for your browser, then open the APK.</p>
+  </div>
+
+  <footer>ENKRIT v1.2.1 · dummy test page · not the public site</footer>
+</body>
+</html>
