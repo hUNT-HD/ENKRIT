@@ -106,6 +106,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        // Restore screen brightness so a player dim doesn't persist in the background.
+        restoreBrightness();
         // Auto-lock the private vault the moment the app leaves the foreground.
         if (webView != null) {
             webView.evaluateJavascript(
@@ -113,10 +115,15 @@ public class MainActivity extends Activity {
         }
     }
     private boolean nativePlayerVisible = false;
+    private boolean brightnessOverridden = false;
     private Uri pendingDeleteUri;
     private int nativeVideoWidth = 0;
     private int nativeVideoHeight = 0;
     private float nativePixelRatio = 1f;
+    // Current user pinch-zoom / pan, preserved across letterbox re-fits.
+    private float userZoom = 1f;
+    private float userTranslateX = 0f;
+    private float userTranslateY = 0f;
     private final Paint texturePaint = new Paint();
     private final Runnable progressTicker = new Runnable() {
         @Override
@@ -416,23 +423,27 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(targetW, targetH);
         lp.gravity = android.view.Gravity.CENTER;
         playerTexture.setLayoutParams(lp);
-        setTextureZoom(1f);
+        // Re-apply any active user pinch-zoom/pan rather than discarding it.
+        applyTextureTransform();
     }
 
     private void setTextureZoom(float zoom) {
-        if (playerTexture == null) return;
-        float scale = Math.max(0.5f, Math.min(3f, zoom));
-        playerTexture.setScaleX(scale);
-        playerTexture.setScaleY(scale);
-        if (scale <= 1.01f) {
-            playerTexture.setTranslationX(0f);
-            playerTexture.setTranslationY(0f);
-        }
+        userZoom = Math.max(0.5f, Math.min(3f, zoom));
+        userTranslateX = 0f;
+        userTranslateY = 0f;
+        applyTextureTransform();
     }
 
     private void setTextureTransform(float zoom, float translateX, float translateY) {
+        userZoom = Math.max(0.5f, Math.min(3f, zoom));
+        userTranslateX = translateX;
+        userTranslateY = translateY;
+        applyTextureTransform();
+    }
+
+    private void applyTextureTransform() {
         if (playerTexture == null) return;
-        float scale = Math.max(0.5f, Math.min(3f, zoom));
+        float scale = userZoom;
         playerTexture.setScaleX(scale);
         playerTexture.setScaleY(scale);
         if (scale <= 1.01f) {
@@ -440,8 +451,8 @@ public class MainActivity extends Activity {
             playerTexture.setTranslationY(0f);
             return;
         }
-        playerTexture.setTranslationX(translateX);
-        playerTexture.setTranslationY(translateY);
+        playerTexture.setTranslationX(userTranslateX);
+        playerTexture.setTranslationY(userTranslateY);
     }
 
     private void setTextureFilter(
@@ -572,6 +583,18 @@ public class MainActivity extends Activity {
             player.clearMediaItems();
         }
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        restoreBrightness();
+    }
+
+    /** Reset any player brightness override back to the system default. */
+    private void restoreBrightness() {
+        if (!brightnessOverridden) return;
+        runOnUiThread(() -> {
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
+            getWindow().setAttributes(lp);
+            brightnessOverridden = false;
+        });
     }
 
     // ── Picture-in-Picture (audit #2) ───────────────────────────────────
@@ -1079,6 +1102,7 @@ public class MainActivity extends Activity {
             boolean ok = false; String outName = "";
             android.media.MediaExtractor ex = new android.media.MediaExtractor();
             android.media.MediaMuxer mux = null;
+            android.os.ParcelFileDescriptor pfd = null;
             Uri outUri = null;
             try {
                 ex.setDataSource(this, Uri.parse(uriStr), null);
@@ -1098,7 +1122,7 @@ public class MainActivity extends Activity {
                     cv.put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/ENKRIT");
                 outUri = getContentResolver().insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cv);
                 if (outUri == null) throw new Exception("mediastore");
-                android.os.ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(outUri, "rw");
+                pfd = getContentResolver().openFileDescriptor(outUri, "rw");
                 mux = new android.media.MediaMuxer(pfd.getFileDescriptor(),
                         android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
                 int dst = mux.addTrack(fmt);
@@ -1121,6 +1145,7 @@ public class MainActivity extends Activity {
             } finally {
                 try { if (mux != null) { mux.stop(); mux.release(); } } catch (Exception ignored) { ok = false; }
                 try { ex.release(); } catch (Exception ignored) {}
+                try { if (pfd != null) pfd.close(); } catch (Exception ignored) {}
             }
             final boolean fok = ok; final String fname = outName;
             String s = "window.ENKRITAndroid&&window.ENKRITAndroid.onAudioExtracted&&window.ENKRITAndroid.onAudioExtracted("
@@ -1406,11 +1431,16 @@ public class MainActivity extends Activity {
                 int dot = name.lastIndexOf('.');
                 if (dot >= 0) ext = name.substring(dot);
                 java.io.File dst = new java.io.File(dir, System.currentTimeMillis() + "_" + i + ext);
+                boolean copied = false;
                 try (java.io.InputStream in = getContentResolver().openInputStream(uri);
                      java.io.OutputStream out = new java.io.FileOutputStream(dst)) {
                     if (in == null) continue;
                     byte[] buf = new byte[1 << 16]; int r;
                     while ((r = in.read(buf)) > 0) out.write(buf, 0, r);
+                    copied = true;
+                } finally {
+                    // Streams are closed here; drop any empty/partial file left behind.
+                    if (!copied) { try { dst.delete(); } catch (Exception ig) {} }
                 }
                 JSONObject item = new JSONObject();
                 item.put("name", name);
@@ -1534,8 +1564,12 @@ public class MainActivity extends Activity {
                     if (bmp != null) {
                         int w = bmp.getWidth(), h = bmp.getHeight();
                         float sc = 200f / Math.max(1, w);
-                        if (sc < 1f) bmp = Bitmap.createScaledBitmap(bmp,
-                                Math.max(1, Math.round(w * sc)), Math.max(1, Math.round(h * sc)), true);
+                        if (sc < 1f) {
+                            Bitmap orig = bmp;
+                            bmp = Bitmap.createScaledBitmap(bmp,
+                                    Math.max(1, Math.round(w * sc)), Math.max(1, Math.round(h * sc)), true);
+                            if (bmp != orig) orig.recycle();
+                        }
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         bmp.compress(Bitmap.CompressFormat.JPEG, 55, baos);
                         b64 = android.util.Base64.encodeToString(baos.toByteArray(), android.util.Base64.NO_WRAP);
@@ -1944,6 +1978,7 @@ public class MainActivity extends Activity {
                 WindowManager.LayoutParams lp = getWindow().getAttributes();
                 lp.screenBrightness = Math.max(0.05f, Math.min(1f, percent / 100f));
                 getWindow().setAttributes(lp);
+                brightnessOverridden = true;
             });
         }
 

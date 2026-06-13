@@ -272,15 +272,28 @@ class ViewController: UIViewController {
     // MARK: - Orientation
 
     func setOrientationMode(_ mode: String) {
+        let targetOrientation: UIInterfaceOrientation
         switch mode {
-        case "landscape": currentOrientationMask = .landscape
-        case "auto":      currentOrientationMask = .allButUpsideDown
-        default:          currentOrientationMask = .portrait
+        case "landscape":
+            currentOrientationMask = .landscape
+            targetOrientation = .landscapeRight
+        case "auto":
+            currentOrientationMask = .allButUpsideDown
+            // Don't force a specific orientation in auto mode — follow the device.
+            targetOrientation = .unknown
+        default:
+            currentOrientationMask = .portrait
+            targetOrientation = .portrait
         }
         if #available(iOS 16, *) {
             setNeedsUpdateOfSupportedInterfaceOrientations()
         } else {
-            UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+            // Map the requested mode to the correct interface orientation rather
+            // than hardcoding portrait. In auto mode leave the current orientation
+            // untouched and just let the system re-evaluate.
+            if targetOrientation != .unknown {
+                UIDevice.current.setValue(targetOrientation.rawValue, forKey: "orientation")
+            }
             UIViewController.attemptRotationToDeviceOrientation()
         }
     }
@@ -641,6 +654,9 @@ extension ViewController: PHPickerViewControllerDelegate {
         guard !results.isEmpty else { return }
 
         var items: [[String: Any]] = []
+        // loadFileRepresentation completion handlers run on arbitrary background
+        // queues concurrently; serialize all mutations of `items` with this lock.
+        let itemsLock = NSLock()
         let group = DispatchGroup()
 
         for result in results {
@@ -649,17 +665,22 @@ extension ViewController: PHPickerViewControllerDelegate {
             result.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, _ in
                 defer { group.leave() }
                 guard let url = url else { return }
-                // Copy to temp so the URL remains valid after the picker closes
+                // Copy to temp so the URL remains valid after the picker closes.
+                // Prefix a UUID so two files sharing a name (e.g. IMG_0001.mov)
+                // never collide or overwrite each other.
                 let dest = FileManager.default.temporaryDirectory
-                    .appendingPathComponent("enkrit_\(url.lastPathComponent)")
+                    .appendingPathComponent("enkrit_\(UUID().uuidString)_\(url.lastPathComponent)")
                 try? FileManager.default.removeItem(at: dest)
                 try? FileManager.default.copyItem(at: url, to: dest)
-                items.append([
+                let item: [String: Any] = [
                     "url":  dest.absoluteString,
                     "path": dest.path,
                     "name": url.lastPathComponent,
                     "type": "video",
-                ])
+                ]
+                itemsLock.lock()
+                items.append(item)
+                itemsLock.unlock()
             }
         }
 
@@ -735,7 +756,12 @@ extension ViewController: UIDocumentPickerDelegate {
 
 private extension String {
     var jsEscaped: String {
+        // Escape backslash FIRST so later substitutions aren't double-escaped.
         replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
     }
 }

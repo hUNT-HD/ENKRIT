@@ -2,7 +2,10 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, systemPreferences } = require
 const path  = require("path");
 const fs    = require("fs");
 const os    = require("os");
-const { spawn, execSync, execFileSync } = require("child_process");
+const crypto = require("crypto");
+const { spawn, execFile } = require("child_process");
+const { promisify } = require("util");
+const execFileAsync = promisify(execFile);
 let ffmpegPath = null;
 let ffprobePath = null;
 try { ffmpegPath = require("ffmpeg-static"); } catch(_) {}
@@ -13,6 +16,42 @@ ffprobePath = resolveToolPath("ffprobe") || ffprobePath;
 app.name = "ENKRIT";
 let win;
 let activeWhisperProc = null;
+let activeFfmpegProc = null;
+
+// Track temp artifacts created this session for cleanup on quit.
+const tempArtifacts = new Set();
+const PLAYABLE_DIR = path.join(os.tmpdir(), "enkrit_playable");
+
+// Monotonic counter to make temp names collision-resistant alongside randomUUID.
+let tempCounter = 0;
+function uniqueTempName(prefix, ext) {
+  tempCounter += 1;
+  return `${prefix}${crypto.randomUUID()}_${tempCounter}${ext}`;
+}
+
+function safeUnlink(p) {
+  try { fs.unlinkSync(p); } catch(_) {}
+}
+
+// Remove leftover temp artifacts from previous sessions on startup.
+function cleanStaleTempArtifacts() {
+  try {
+    for(const f of fs.readdirSync(os.tmpdir())) {
+      if(/^enkrit_sub_.*\.srt$/.test(f)) safeUnlink(path.join(os.tmpdir(), f));
+    }
+  } catch(_) {}
+  try {
+    if(fs.existsSync(PLAYABLE_DIR)) {
+      for(const f of fs.readdirSync(PLAYABLE_DIR)) safeUnlink(path.join(PLAYABLE_DIR, f));
+    }
+  } catch(_) {}
+}
+
+// Remove temp artifacts created during this session.
+function cleanSessionTempArtifacts() {
+  for(const p of tempArtifacts) safeUnlink(p);
+  tempArtifacts.clear();
+}
 
 function resolveToolPath(tool) {
   if(process.platform !== "win32") return null;
@@ -54,6 +93,7 @@ function createWindow() {
   win.once("ready-to-show", () => win.show());
   win.setTitle("ENKRIT");
   win.webContents.on("did-finish-load", () => win.setTitle("ENKRIT"));
+  win.on("closed", () => { win = null; });
   buildMenu();
 }
 
@@ -61,18 +101,19 @@ function createWindow() {
    IPC: LOCAL WHISPER SUBTITLE GENERATION
 ══════════════════════════════════════ */
 ipcMain.handle("run-whisper", async (event, videoPath) => {
+  const scriptPath = path.join(__dirname, "..", "src", "whisper_sub.py");
+  const srtPath    = path.join(os.tmpdir(), uniqueTempName("enkrit_sub_", ".srt"));
+  tempArtifacts.add(srtPath);
+
+  // Find python3 (async so the main thread is never blocked)
+  let python = "python3";
+  try { await execFileAsync("python3", ["--version"], { timeout:10000 }); }
+  catch(_) {
+    try { await execFileAsync("python", ["--version"], { timeout:10000 }); python = "python"; }
+    catch(_2) { return { error: "Python not found. Install Python 3 from python.org" }; }
+  }
+
   return new Promise((resolve) => {
-    const scriptPath = path.join(__dirname, "..", "src", "whisper_sub.py");
-    const srtPath    = path.join(os.tmpdir(), "enkrit_sub_" + Date.now() + ".srt");
-
-    // Find python3
-    let python = "python3";
-    try { execSync("python3 --version", { stdio:"ignore" }); }
-    catch(_) {
-      try { execSync("python --version", { stdio:"ignore" }); python = "python"; }
-      catch(_2) { resolve({ error: "Python not found. Install Python 3 from python.org" }); return; }
-    }
-
     if(activeWhisperProc) {
       try { activeWhisperProc.kill(); } catch(_) {}
       activeWhisperProc = null;
@@ -116,7 +157,16 @@ ipcMain.handle("run-whisper", async (event, videoPath) => {
 });
 
 ipcMain.handle("read-file", async (event, filePath) => {
-  try { return fs.readFileSync(filePath, "utf-8"); }
+  try {
+    if(!filePath) return null;
+    // Confine reads to temp artifacts (whisper SRTs / prepared MP4s) and .srt subtitle files.
+    const resolved = fs.realpathSync(path.resolve(filePath));
+    const tmpRoot  = fs.realpathSync(os.tmpdir());
+    const withinTmp = resolved === tmpRoot || resolved.startsWith(tmpRoot + path.sep);
+    const isSrt = resolved.toLowerCase().endsWith(".srt");
+    if(!withinTmp && !isSrt) return null;
+    return fs.readFileSync(resolved, "utf-8");
+  }
   catch(e) { return null; }
 });
 
@@ -124,14 +174,21 @@ ipcMain.handle("prepare-playable", async (event, mediaPath) => {
   if(!mediaPath || !fs.existsSync(mediaPath)) return { error: "File not found" };
   if(!ffmpegPath) return { error: "FFmpeg is not available in this build" };
 
-  const outDir = path.join(os.tmpdir(), "enkrit_playable");
+  const outDir = PLAYABLE_DIR;
   try { fs.mkdirSync(outDir, { recursive:true }); } catch(_) {}
+
+  // Concurrency guard: kill any in-flight transcode before starting a new one.
+  if(activeFfmpegProc) {
+    try { activeFfmpegProc.kill(); } catch(_) {}
+    activeFfmpegProc = null;
+  }
 
   const base = path.basename(mediaPath, path.extname(mediaPath))
     .replace(/[^\w.-]+/g, "_")
     .slice(0, 60) || "media";
-  const outPath = path.join(outDir, `${base}_${Date.now()}.mp4`);
-  const codecs = probeCodecs(mediaPath);
+  const outPath = path.join(outDir, uniqueTempName(`${base}_`, ".mp4"));
+  tempArtifacts.add(outPath);
+  const codecs = await probeCodecs(mediaPath);
   const canRemux = codecs.video === "h264" && (!codecs.audio || ["aac", "mp3"].includes(codecs.audio));
   const args = canRemux
     ? [
@@ -163,25 +220,26 @@ ipcMain.handle("prepare-playable", async (event, mediaPath) => {
     : result;
 });
 
-function probeCodecs(mediaPath) {
-  if(!ffprobePath) return {};
+async function probeCodecs(mediaPath) {
+  if(!ffprobePath) { console.warn("[ENKRIT] ffprobe not available; forcing full transcode"); return {}; }
   try {
-    const raw = execFileSync(ffprobePath, [
+    const { stdout:raw } = await execFileAsync(ffprobePath, [
       "-v", "error",
       "-select_streams", "v:0",
       "-show_entries", "stream=codec_name",
       "-of", "default=nw=1:nk=1",
       mediaPath,
-    ], { encoding:"utf8", timeout:10000 }).trim();
-    const audio = execFileSync(ffprobePath, [
+    ], { encoding:"utf8", timeout:10000 });
+    const { stdout:audio } = await execFileAsync(ffprobePath, [
       "-v", "error",
       "-select_streams", "a:0",
       "-show_entries", "stream=codec_name",
       "-of", "default=nw=1:nk=1",
       mediaPath,
-    ], { encoding:"utf8", timeout:10000 }).trim();
-    return { video:raw.toLowerCase(), audio:audio.toLowerCase() };
-  } catch(_) {
+    ], { encoding:"utf8", timeout:10000 });
+    return { video:raw.trim().toLowerCase(), audio:audio.trim().toLowerCase() };
+  } catch(e) {
+    console.warn("[ENKRIT] ffprobe failed; forcing full transcode:", e && e.message);
     return {};
   }
 }
@@ -189,6 +247,7 @@ function probeCodecs(mediaPath) {
 function runFfmpeg(args, outPath) {
   return new Promise((resolve) => {
     const proc = spawn(ffmpegPath, args);
+    activeFfmpegProc = proc;
     let stderr = "";
 
     proc.stderr.on("data", data => {
@@ -196,17 +255,27 @@ function runFfmpeg(args, outPath) {
     });
 
     proc.on("close", code => {
+      if(activeFfmpegProc === proc) activeFfmpegProc = null;
       if(code === 0 && fs.existsSync(outPath)) resolve({ status:"done", path:outPath });
       else resolve({ error: "Playback conversion failed", detail:stderr });
     });
 
-    proc.on("error", err => resolve({ error: "Cannot run FFmpeg: " + err.message }));
+    proc.on("error", err => {
+      if(activeFfmpegProc === proc) activeFfmpegProc = null;
+      resolve({ error: "Cannot run FFmpeg: " + err.message });
+    });
   });
 }
 
 /* ══════════════════════════════════════
    MENU
 ══════════════════════════════════════ */
+function runInRenderer(js) {
+  if(win && !win.isDestroyed()) {
+    win.webContents.executeJavaScript(js).catch(()=>{});
+  }
+}
+
 function buildMenu() {
   const isMac = process.platform === "darwin";
   const template = [
@@ -216,25 +285,25 @@ function buildMenu() {
       { type:"separator" }, { role:"quit" },
     ]}] : []),
     { label:"File", submenu:[
-      { label:"Open Media…",   accelerator:"CmdOrCtrl+O",       click:()=>win.webContents.executeJavaScript('document.getElementById("fileInput").click()') },
-      { label:"Open Folder…",  accelerator:"CmdOrCtrl+Shift+O", click:()=>win.webContents.executeJavaScript('document.getElementById("folderInput").click()') },
+      { label:"Open Media…",   accelerator:"CmdOrCtrl+O",       click:()=>runInRenderer('document.getElementById("fileInput").click()') },
+      { label:"Open Folder…",  accelerator:"CmdOrCtrl+Shift+O", click:()=>runInRenderer('document.getElementById("folderInput").click()') },
       { type:"separator" },
       isMac ? { role:"close" } : { role:"quit" },
     ]},
     { label:"Playback", submenu:[
-      { label:"Play / Pause",      accelerator:"Space",            click:()=>win.webContents.executeJavaScript('document.getElementById("btnPlay").click()') },
-      { label:"Back 5 seconds",    accelerator:"Left",             click:()=>win.webContents.executeJavaScript('document.getElementById("btnBack5").click()') },
-      { label:"Forward 5 secs",    accelerator:"Right",            click:()=>win.webContents.executeJavaScript('document.getElementById("btnFwd5").click()') },
-      { label:"Previous Video",    accelerator:"CmdOrCtrl+Left",   click:()=>win.webContents.executeJavaScript('document.getElementById("btnPrev").click()') },
-      { label:"Next Video",        accelerator:"CmdOrCtrl+Right",  click:()=>win.webContents.executeJavaScript('document.getElementById("btnNext").click()') },
+      { label:"Play / Pause",      accelerator:"Space",            click:()=>runInRenderer('document.getElementById("btnPlay").click()') },
+      { label:"Back 5 seconds",    accelerator:"Left",             click:()=>runInRenderer('document.getElementById("btnBack5").click()') },
+      { label:"Forward 5 secs",    accelerator:"Right",            click:()=>runInRenderer('document.getElementById("btnFwd5").click()') },
+      { label:"Previous Video",    accelerator:"CmdOrCtrl+Left",   click:()=>runInRenderer('document.getElementById("btnPrev").click()') },
+      { label:"Next Video",        accelerator:"CmdOrCtrl+Right",  click:()=>runInRenderer('document.getElementById("btnNext").click()') },
       { type:"separator" },
-      { label:"Toggle Fullscreen", accelerator:isMac?"Ctrl+Cmd+F":"F11", click:()=>win.webContents.executeJavaScript('document.getElementById("btnFull").click()') },
-      { label:"Picture in Picture",click:()=>win.webContents.executeJavaScript('document.getElementById("btnPip").click()') },
+      { label:"Toggle Fullscreen", accelerator:isMac?"Ctrl+Cmd+F":"F11", click:()=>runInRenderer('document.getElementById("btnFull").click()') },
+      { label:"Picture in Picture",click:()=>runInRenderer('document.getElementById("btnPip").click()') },
     ]},
     { label:"View", submenu:[
-      { label:"Toggle Dark/Light", accelerator:"CmdOrCtrl+D",       click:()=>win.webContents.executeJavaScript('window.ENKRITToggleTheme && window.ENKRITToggleTheme()') },
-      { label:"Video Filters",     accelerator:"CmdOrCtrl+Shift+F", click:()=>win.webContents.executeJavaScript('document.getElementById("btnFilter").click()') },
-      { label:"Toggle Playlist",   accelerator:"CmdOrCtrl+L",       click:()=>win.webContents.executeJavaScript('document.getElementById("btnSidebar").click()') },
+      { label:"Toggle Dark/Light", accelerator:"CmdOrCtrl+D",       click:()=>runInRenderer('window.ENKRITToggleTheme && window.ENKRITToggleTheme()') },
+      { label:"Video Filters",     accelerator:"CmdOrCtrl+Shift+F", click:()=>runInRenderer('document.getElementById("btnFilter").click()') },
+      { label:"Toggle Playlist",   accelerator:"CmdOrCtrl+L",       click:()=>runInRenderer('document.getElementById("btnSidebar").click()') },
       { type:"separator" },
       { role:"reload" }, { role:"toggleDevTools" },
     ]},
@@ -243,6 +312,7 @@ function buildMenu() {
 }
 
 app.whenReady().then(() => {
+  cleanStaleTempArtifacts();
   createWindow();
   app.on("activate", () => { if(BrowserWindow.getAllWindows().length===0) createWindow(); });
 });
@@ -251,6 +321,11 @@ app.on("before-quit", () => {
     try { activeWhisperProc.kill(); } catch(_) {}
     activeWhisperProc = null;
   }
+  if(activeFfmpegProc) {
+    try { activeFfmpegProc.kill(); } catch(_) {}
+    activeFfmpegProc = null;
+  }
+  cleanSessionTempArtifacts();
 });
 app.on("window-all-closed", () => { if(process.platform !== "darwin") app.quit(); });
 
@@ -283,6 +358,7 @@ function scanDir(dir, depth=0) {
     for(const e of entries) {
       if(e.name.startsWith('.')) continue;
       if(SKIP_SCAN_DIRS.has(e.name)) continue;
+      if(e.isSymbolicLink()) continue; // skip symlinks to avoid cycles
       const full = path.join(dir, e.name);
       if(e.isDirectory() && depth < 4) {
         files.push(...scanDir(full, depth+1));

@@ -145,15 +145,23 @@ function setupAndroidBridge(){
       // Fully unwind native-playback state — leaving S.nativePlayback /
       // body classes stale breaks every subsequent load until app restart.
       try { stopNativePlayback(); } catch(_){}
-      // One automatic recovery attempt (e.g. transient seek/decoder glitch)
-      // before giving up — prevents "player gayab" on a single hiccup.
+      // A few automatic recovery attempts (e.g. transient seek/decoder glitch)
+      // before giving up — prevents "player gayab" on a single hiccup. Cap the
+      // retries PER ITEM so a persistently-failing file can't loop forever (the
+      // 12s time-guard alone resets on every attempt and never terminates).
       const idx = S.currentIndex, now = Date.now();
-      if(idx >= 0 && (!S._lastNativeRetry || now - S._lastNativeRetry > 12000)){
+      const retryKey = (idx >= 0 && S.playlist[idx]?.path) ? S.playlist[idx].path : String(idx);
+      S._nativeRetryCounts = S._nativeRetryCounts || {};
+      const attempts = S._nativeRetryCounts[retryKey] || 0;
+      const MAX_NATIVE_RETRIES = 2;
+      if(idx >= 0 && attempts < MAX_NATIVE_RETRIES && (!S._lastNativeRetry || now - S._lastNativeRetry > 12000)){
         S._lastNativeRetry = now;
+        S._nativeRetryCounts[retryKey] = attempts + 1;
         showSubToast("Recovering playback…");
         setTimeout(()=>{ try { loadVideo(idx); } catch(_){ backToLibrary(); } }, 350);
         return;
       }
+      if(retryKey in S._nativeRetryCounts) delete S._nativeRetryCounts[retryKey]; // reset for future plays
       backToLibrary();
       showSubToast(message || "This video could not be played", "error");
     },
@@ -271,6 +279,7 @@ function getResumeMs(item){
   if(entry.duration && entry.duration - entry.position < 10000) return 0;
   return Math.max(0, entry.position || 0);
 }
+let _pendingResumeResolve = null; // resolver of an open resume-choice dialog
 function chooseStartPosition(item){
   const resumeMs = getResumeMs(item);
   if(resumeMs < 10000) return Promise.resolve(0);
@@ -281,6 +290,13 @@ function chooseStartPosition(item){
   return new Promise(resolve => {
     const existing = document.querySelector(".resume-choice");
     if(existing) existing.remove();
+    // A prior dialog is being replaced — resolve its dangling promise so the
+    // stale loadVideo() caller doesn't hang forever (start from 0 / "start over").
+    if(_pendingResumeResolve){
+      const stale = _pendingResumeResolve;
+      _pendingResumeResolve = null;
+      stale(0);
+    }
     const box = document.createElement("div");
     box.className = "resume-choice";
     box.innerHTML = `
@@ -293,9 +309,11 @@ function chooseStartPosition(item){
         </div>
       </div>`;
     const done = (ms) => {
+      _pendingResumeResolve = null;
       box.remove();
       resolve(ms);
     };
+    _pendingResumeResolve = resolve;
     box.querySelector(".resume-start").addEventListener("click", () => done(0));
     box.querySelector(".resume-continue").addEventListener("click", () => done(resumeMs));
     document.body.appendChild(box);
@@ -527,8 +545,10 @@ function togglePlay(){
     if(window.AndroidBridge?.nativeSetPlaying) { // Bug 9: check method exists before calling
       try { window.AndroidBridge.nativeSetPlaying(next); } catch(_){}
       setPlaybackUi(next);
+      return;
     }
-    return;
+    // Fallback: native method unavailable — drive the HTML <video> instead so
+    // play/pause still works and the UI updates.
   }
   if(video.paused) video.play().catch(()=>{}); else video.pause();
 }
@@ -1333,14 +1353,18 @@ function backToLibrary(){
 }
 
 function removeFromPlaylist(i){
-  // Bug 16 + audit #4: clear resume for ANY deleted item (current or not),
-  // and do it before stopNativePlayback() re-saves it for the current one.
+  // Bug 16 + audit #4: clear resume for ANY deleted item (current or not).
+  // For the currently-playing item the delete MUST happen AFTER
+  // stopNativePlayback() — otherwise its saveResumePosition(true) (which reads
+  // currentItem(), still pointing at the not-yet-spliced item) re-writes the
+  // entry we just removed.
   const delItem = S.playlist[i];
+  const delIsCurrent = (S.currentIndex===i);
+  if(delIsCurrent){
+    stopNativePlayback();
+  }
   if(delItem) {
     try { const rs=resumeStore(); delete rs[resumeKey(delItem)]; localStorage.setItem("enkrit_resume",JSON.stringify(rs)); } catch(_){}
-  }
-  if(S.currentIndex===i){
-    stopNativePlayback();
   }
   releaseItemUrl(S.playlist[i]);
   S.playlist.splice(i,1);
@@ -2679,9 +2703,16 @@ function markNowPlayingCards() {
     if(card.dataset.path === item.path) card.classList.add("is-playing");
   });
   // Mark folder tile if we're in grouped view
+  // data-folder holds the parent folder LABEL (basename), so compare it to the
+  // item's own parent-directory basename — a plain includes() over-matches
+  // (e.g. "Camera" would match "/CameraRoll/..." or any path containing it).
+  const sep = Math.max(item.path.lastIndexOf("/"), item.path.lastIndexOf("\\"));
+  const dir = sep >= 0 ? item.path.slice(0, sep) : "";
+  const dirSep = Math.max(dir.lastIndexOf("/"), dir.lastIndexOf("\\"));
+  const itemFolder = dirSep >= 0 ? dir.slice(dirSep + 1) : dir;
   document.querySelectorAll(".lib-folder-tile").forEach(tile => {
     const folder = tile.dataset.folder;
-    if(folder && item.path && item.path.includes(folder)) tile.classList.add("is-playing");
+    if(folder && itemFolder && folder === itemFolder) tile.classList.add("is-playing");
   });
 }
 
@@ -3161,13 +3192,7 @@ function showQuickSpeedPicker() {
     `;
     btn.textContent = sp === 1.0 ? "1×" : sp + "×";
     btn.addEventListener("click", () => {
-      S.speed = sp;
-      video.playbackRate = sp;
-      if(isAndroidApp() && window.AndroidBridge?.setSpeed) window.AndroidBridge.setSpeed(sp);
-      // Update speed panel active item
-      document.querySelectorAll(".speed-item").forEach(el => el.classList.toggle("active", parseFloat(el.dataset.speed) === sp));
-      const speedLabel = $("btnSpeed")?.querySelector(".speed-label") || $("btnSpeed");
-      if(speedLabel && speedLabel.textContent !== undefined) speedLabel.textContent = sp === 1.0 ? "1×" : sp + "×";
+      setSpeed(sp); // canonical setter: fixes wrong bridge method + state desync
       picker.remove();
       showSubToast(`Speed: ${sp}×`, "info");
     });
@@ -4337,10 +4362,15 @@ function hideSeekBubble(){ $("seekBubble")?.classList.remove("visible"); }
       if(isAndroidApp() && S.nativePlayback && window.AndroidBridge?.requestSeekPreview && item?.path){
         _spToken++;
         window.AndroidBridge.requestSeekPreview(item.path, Math.round(sec*1000), _spToken);
-      } else if(!isAndroidApp() && item){
-        // Desktop: offscreen <video> seeks + draws the frame
-        if(!_spDesktopVid){ _spDesktopVid = document.createElement("video"); _spDesktopVid.muted = true; _spDesktopVid.preload = "auto"; }
-        if(_spDesktopVid.src !== (item.url || "")) _spDesktopVid.src = item.url || "";
+      } else if(!isAndroidApp() && item && item.url){
+        // Desktop: offscreen <video> seeks + draws the frame. Guard against a
+        // released blob: URL (releaseItemUrl() nulls item.url on revoke) and
+        // silently disable the preview if the offscreen element errors.
+        if(!_spDesktopVid){
+          _spDesktopVid = document.createElement("video"); _spDesktopVid.muted = true; _spDesktopVid.preload = "auto";
+          _spDesktopVid.onerror = () => { hideSeekBubble(); };
+        }
+        if(_spDesktopVid.src !== item.url) _spDesktopVid.src = item.url;
         _spDesktopVid.currentTime = sec;
         _spDesktopVid.onseeked = () => {
           try {

@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // Listen for progress updates from whisper
   onWhisperProgress: (callback) => {
+    ipcRenderer.removeAllListeners("whisper-progress");
     ipcRenderer.on("whisper-progress", (event, data) => callback(data));
   },
 
