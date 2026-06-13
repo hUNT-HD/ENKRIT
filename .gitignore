@@ -19,3 +19,7 @@ android/.gradle/
 android/build/
 android/app/build/
 android/local.properties
+
+# Xcode user state (per-user, not for repo)
+*.xcuserstate
+**/xcuserdata/
